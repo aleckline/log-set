@@ -11,11 +11,11 @@ def show_rehab():
 	if day % 2 == 1:
 		print('Odd-day Rehab:')
 		for exercise in odd_rehab:
-			print('\t ' + exercise.title())
+			print('- ' + exercise.title())
 	else:
 		print('Even-day Rehab:')
 		for exercise in even_rehab:
-			print('\t ' + exercise.title())
+			print('- ' + exercise.title())
 
 show_rehab()
 
@@ -34,10 +34,26 @@ def log_set(exercise, weight, reps):
 			reps
 		])
 
+last_entries = []
+
 while True:
 	entry = input('Enter exercise, weight, reps: ')
 	if entry == 'done':
 		break
+		
+	if entry == 'r':
+		if not last_entries:
+			print('No previous entries from session.')
+		
+		last = last_entries[-1]
+		
+		last['Exercise'] = exercise
+		last['Weight'] = weight
+		last['reps'] = reps
+
+		log_set(exercise, weight, reps)
+		
+		continue
 		
 	parts = entry.split(',')
 
@@ -46,6 +62,13 @@ while True:
 	reps = parts[2].strip()
 	
 	log_set(exercise, weight, reps)
+
+	last_entries.append({
+		'Exercise': exercise,
+		'Weight': weight,
+		'Reps': reps
+		})
+
 
 def calculate_volume(exercise, weight, reps):
 	if exercise.endswith('iso'):
