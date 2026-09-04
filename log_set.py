@@ -1238,12 +1238,45 @@ while True:
         compare_to_4_week_average()
         continue
 
-    parts = entry.split(',')
+    if not entry:
+        continue
+
     parts = entry.split(',')
 
+    if len(parts) < 3:
+        print(
+            'Enter a set as exercise,weight,reps '
+            'or add an optional note as a fourth value. '
+            'Example: bench,185,8'
+        )
+        continue
+
     exercise = parts[0].strip()
-    weight = float(parts[1].strip())
-    reps = int(float(parts[2].strip()))
+
+    if not exercise:
+        print('Exercise name cannot be blank.')
+        continue
+
+    weight_text = parts[1].strip()
+    reps_text = parts[2].strip()
+
+    try:
+        weight = float(weight_text)
+    except ValueError:
+        print('Weight must be a number. Example: bench,185,8')
+        continue
+
+    try:
+        reps_value = float(reps_text)
+    except ValueError:
+        print('Reps must be a whole number. Example: bench,185,8')
+        continue
+
+    if not reps_value.is_integer():
+        print('Reps must be a whole number. Example: bench,185,8')
+        continue
+
+    reps = int(reps_value)
 
     if len(parts) > 3:
         note = parts[3].strip()
