@@ -540,6 +540,79 @@ def show_4_week_average():
 
         printed_category = True
 
+def get_4_week_set_totals():
+    today = datetime.now().date()
+    start_date = today.fromordinal(today.toordinal() - 27)
+    total_sets = {}
+
+    try:
+        file = open(FILENAME)
+    except FileNotFoundError:
+        return total_sets
+
+    with file:
+        reader = csv.reader(file)
+
+        for row in reader:
+            if len(row) < 6:
+                continue
+
+            try:
+                date = datetime.strptime(row[0], '%Y-%m-%d').date()
+            except ValueError:
+                continue
+
+            if start_date <= date <= today:
+                exercise = row[2].strip()
+                total_sets[exercise] = total_sets.get(exercise, 0) + 1
+
+    return total_sets
+
+def select_workout_menu(category_name, exercise_categories):
+    categories = {
+        'push': 'Push',
+        'pull': 'Pull',
+        'legs': 'Legs/Other',
+        'other': 'Legs/Other',
+        'legs/other': 'Legs/Other',
+    }
+    category = categories.get(category_name.strip().lower())
+
+    if not category:
+        print('Use: workout push/pull/legs')
+        return None, []
+
+    exercises = [
+        exercise
+        for exercise, exercise_category in exercise_categories.items()
+        if exercise_category == category
+    ]
+
+    if not exercises:
+        print(f'No {category} exercises.')
+        return None, []
+
+    total_sets = get_4_week_set_totals()
+    exercises.sort(
+        key=lambda exercise: (
+            -total_sets.get(exercise, 0),
+            exercise.lower(),
+        )
+    )
+    return category, exercises
+
+def show_workout_menu(category, exercises):
+    if not category:
+        print('No workout selected.')
+        return
+
+    print(f'\n{category}:')
+
+    for number, exercise in enumerate(exercises, start=1):
+        print(f'{number}. {exercise}')
+
+    print()
+
 def show_8_week_average():
     today = datetime.now().date()
 
@@ -1071,6 +1144,8 @@ def categorize_uncategorized_exercises(exercise_categories):
 def show_command_menu():
 	print('\nCommands:')
 	print('  done          Finish workout and print reports')
+	print('  workout NAME  Select a workout')
+	print('  menu          Show workout exercises')
 	print('  r             Repeat last set')
 	print('  r2            Repeat last 2 sets')
 	print('  w / week      Show current week volume')
@@ -1083,19 +1158,38 @@ def show_command_menu():
 	print('  compare last  Compare current week to last week')
 	print('  compare avg4  Compare current week to 4-week average')
 	print('  cat           Categorize uncategorized exercises')
-	print('  menu          Show this menu')
+	print('  help          Show commands')
 	print()
 
 exercise_categories = load_exercise_categories()
 new_exercises = []
+active_category = None
+active_exercises = []
 
 while True:
     entry = input('> ')
 
     entry = entry.strip()
 
-    if entry in ['menu', 'help']:
+    if entry == 'help':
         show_command_menu()
+        continue
+
+    if entry == 'menu':
+        show_workout_menu(active_category, active_exercises)
+        continue
+
+    if entry.startswith('workout '):
+        new_category, new_exercises_menu = select_workout_menu(
+            entry.replace('workout ', '', 1),
+            exercise_categories,
+        )
+
+        if new_category:
+            active_category = new_category
+            active_exercises = new_exercises_menu
+            show_workout_menu(active_category, active_exercises)
+
         continue
 
     if entry == 'cat':
@@ -1252,6 +1346,22 @@ while True:
         continue
 
     exercise = parts[0].strip()
+
+    if exercise.isdigit():
+        exercise_number = int(exercise)
+
+        if not active_exercises:
+            print('Select a workout first.')
+            continue
+
+        if not 1 <= exercise_number <= len(active_exercises):
+            print(
+                f'Exercise number must be 1-'
+                f'{len(active_exercises)}.'
+            )
+            continue
+
+        exercise = active_exercises[exercise_number - 1]
 
     if not exercise:
         print('Exercise name cannot be blank.')
