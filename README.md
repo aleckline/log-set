@@ -1,28 +1,58 @@
-\# Log Set
+# Log Set
 
+A command-line gym log designed for the fastest possible workout entry, minimizing phone time in the gym while providing key reports that support training decisions.
 
+## Status
 
-A minimalist gym log for fast workout logging and instant insights. 
+This is the stable, non-coaching version. It records and summarizes training without prescribing workouts or recommending progression.
 
+## Requirements
 
+- Python 3
+- No third-party packages
 
-\## Purpose
+## Usage
 
+Run:
 
+```powershell
+python log_set.py
+```
 
-* Log workouts with minimal typing or navigation
-* Retrieve focused training history instantly
-* Quickly answer common training history questions
+Log a set:
 
+```text
+exercise,weight,reps
+```
 
+Add an optional note:
 
-Rather than maximizing features, Log Set focuses on minimizing friction.
+```text
+exercise,weight,reps,note
+```
 
+Example:
 
+```text
+bench,185,8,felt strong
+```
 
-Log Set is not intended to be:
+Type `help` or `menu` while the program is running to see the available commands.
 
-* A social app
-* A calorie tracker
-* A dashboard of charts and animations
+## Features
 
+- Fast CSV workout logging
+- Optional set notes
+- Repeat the previous set or previous two sets
+- Daily and exercise-specific history
+- Weekly and rolling seven-day volume reports
+- Four-week and eight-week averages
+- Week-to-week volume comparisons
+- Exercise categorization
+- Alternating rehab reminders
+
+## Data
+
+Workout history is stored locally in `gym_log.csv`. Exercise categories are stored in `exercise_categories.csv`.
+
+These personal data files are excluded from Git.
