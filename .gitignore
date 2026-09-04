@@ -1,2 +1,7 @@
 logset.csv
+gym_log*.csv
+exercise_categories.csv
+exercise_program.csv
+backups/
 __pycache__/
+*.pyc
