@@ -1,5 +1,25 @@
+"""Log Set: fast gym logging from the command line.
+
+Sections, in order (each one only uses the sections above it):
+  1. Settings
+  2. Data files
+  3. Dates
+  4. Calculations
+  5. Formatting
+  6. Reports
+  7. Exercise categories
+  8. Workout menu
+  9. Rehab reminder
+  10. Main program
+"""
+
 import csv
 from datetime import datetime, timedelta
+
+
+# ======================================================================
+# SETTINGS
+# ======================================================================
 
 FILENAME = 'gym_log.csv'
 
@@ -11,21 +31,42 @@ ODD_REHAB = ['Wrist Curls', 'Neck', 'Quads', 'Wall Stretch', 'Glute Bridge']
 EVEN_REHAB = ['Straight Leg Raise', 'Copenhagen Plank', 'Calves', 'Hamstrings']
 
 
-def show_rehab():
-    today = datetime.now()
-    day = today.day
+# ======================================================================
+# DATA FILES
+# Reading and writing gym_log.csv and exercise_categories.csv.
+# These are the only functions that open a file.
+# ======================================================================
 
-    if day % 2 == 0:
-        print('Even-day prehab:')
-        for exercise in EVEN_REHAB:
-            print(f'- {exercise}')
-        print('\n')
+def read_log_rows():
+    """Return every row of the workout log that has all six columns.
 
-    else:
-        print('Odd-day prehab:')
-        for exercise in ODD_REHAB:
-            print(f'- {exercise}')
-        print('\n')
+    Values are left as raw strings; callers parse what they need.
+    """
+    with open(FILENAME) as file:
+        return [
+            row
+            for row in csv.reader(file)
+            if len(row) >= 6
+        ]
+
+
+def parse_date(text):
+    return datetime.strptime(text, '%Y-%m-%d').date()
+
+
+def parse_set_row(row):
+    """Return (date, exercise, weight, reps, note), or None if the row is bad."""
+    try:
+        return (
+            parse_date(row[0]),
+            row[2].strip(),
+            float(row[3]),
+            int(float(row[4])),
+            row[5].strip(),
+        )
+    except ValueError:
+        return None
+
 
 def log_set(exercise, weight, reps, note):
     now = datetime.now()
@@ -51,11 +92,144 @@ def log_set(exercise, weight, reps, note):
             note
         ])
 
+
+def rename_exercise_in_log(old_name, new_name):
+    rows = []
+
+    with open(FILENAME) as file:
+        reader = csv.reader(file)
+
+        for row in reader:
+            if len(row) >= 3 and row[2] == old_name:
+                row[2] = new_name
+
+            rows.append(row)
+
+    with open(FILENAME, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(rows)
+
+
+def load_exercise_categories():
+    categories = {}
+
+    try:
+        with open(CATEGORY_FILENAME) as file:
+            reader = csv.reader(file)
+
+            for row in reader:
+                if len(row) < 2:
+                    continue
+
+                exercise = row[0].strip()
+                category = row[1].strip()
+
+                if exercise and category:
+                    categories[exercise] = category
+
+    except FileNotFoundError:
+        pass
+
+    return categories
+
+
+def save_exercise_category(exercise, category):
+    with open(CATEGORY_FILENAME, 'a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([exercise, category])
+
+
+# ======================================================================
+# DATES
+# ======================================================================
+
+def today_date():
+    return datetime.now().date()
+
+
+def days_before(day, days):
+    return day - timedelta(days=days)
+
+
+def start_of_week(day):
+    """Monday of the week containing day."""
+    return days_before(day, day.weekday())
+
+
+# ======================================================================
+# CALCULATIONS
+# Turn logged sets into numbers. Nothing here prints.
+# ======================================================================
+
 def calculate_volume(exercise, weight, reps):
     if exercise.endswith('_iso'):
         reps = reps / 2
 
     return weight * reps
+
+
+def get_volume_for_range(start_date, end_date):
+    volume_sets = {}
+    volume_total = {}
+
+    for row in read_log_rows():
+        parsed = parse_set_row(row)
+
+        if parsed is None:
+            continue
+
+        date, exercise, weight, reps, note = parsed
+
+        if start_date <= date <= end_date:
+            volume = calculate_volume(
+                exercise,
+                weight,
+                reps
+            )
+
+            volume_sets[exercise] = (
+                volume_sets.get(exercise, 0) + 1
+            )
+
+            volume_total[exercise] = (
+                volume_total.get(exercise, 0)
+                + volume
+            )
+
+    return volume_sets, volume_total
+
+
+def count_sets_for_range(start_date, end_date):
+    """Count logged sets per exercise between two dates (inclusive)."""
+    total_sets = {}
+
+    for row in read_log_rows():
+        try:
+            date = parse_date(row[0])
+        except ValueError:
+            continue
+
+        if start_date <= date <= end_date:
+            exercise = row[2].strip()
+            total_sets[exercise] = total_sets.get(exercise, 0) + 1
+
+    return total_sets
+
+
+def get_4_week_set_totals():
+    today = today_date()
+    start_date = days_before(today, 27)
+
+    try:
+        return count_sets_for_range(start_date, today)
+    except FileNotFoundError:
+        return {}
+
+
+# ======================================================================
+# FORMATTING
+# Turn numbers into text, and the shared report layouts.
+# ======================================================================
 
 def format_weight(weight):
     weight = float(weight)
@@ -65,50 +239,6 @@ def format_weight(weight):
 
     return weight
 
-def read_log_rows():
-    """Return every row of the workout log that has all six columns.
-
-    Values are left as raw strings; callers parse what they need.
-    """
-    with open(FILENAME) as file:
-        return [
-            row
-            for row in csv.reader(file)
-            if len(row) >= 6
-        ]
-
-def parse_date(text):
-    return datetime.strptime(text, '%Y-%m-%d').date()
-
-def parse_set_row(row):
-    """Return (date, exercise, weight, reps, note), or None if the row is bad."""
-    try:
-        return (
-            parse_date(row[0]),
-            row[2].strip(),
-            float(row[3]),
-            int(float(row[4])),
-            row[5].strip(),
-        )
-    except ValueError:
-        return None
-
-def print_report_header(title):
-    print()
-    print('=' * 40)
-    print(title)
-    print('=' * 40)
-    print()
-
-def today_date():
-    return datetime.now().date()
-
-def days_before(day, days):
-    return day - timedelta(days=days)
-
-def start_of_week(day):
-    """Monday of the week containing day."""
-    return days_before(day, day.weekday())
 
 def group_reps(reps_list):
     """Turn [8, 8, 6] into '2x8, 6'."""
@@ -127,6 +257,32 @@ def group_reps(reps_list):
     grouped.append(f'{count}x{current}' if count > 1 else str(current))
 
     return ', '.join(grouped)
+
+
+def format_set_difference(value):
+    if abs(value) < 0.05:
+        value = 0
+
+    if float(value).is_integer():
+        return f'{int(value):+d}'
+
+    return f'{value:+.1f}'
+
+
+def format_volume_difference(value):
+    if abs(value) < 0.5:
+        value = 0
+
+    return f'{value:+,.0f}'
+
+
+def print_report_header(title):
+    print()
+    print('=' * 40)
+    print(title)
+    print('=' * 40)
+    print()
+
 
 def print_by_category(items, sort_key, format_line):
     """Print items grouped under Push / Pull / Legs/Other / Uncategorized.
@@ -170,27 +326,6 @@ def print_by_category(items, sort_key, format_line):
 
         printed_category = True
 
-def load_exercise_categories():
-    categories = {}
-
-    try:
-        with open(CATEGORY_FILENAME) as file:
-            reader = csv.reader(file)
-
-            for row in reader:
-                if len(row) < 2:
-                    continue
-
-                exercise = row[0].strip()
-                category = row[1].strip()
-
-                if exercise and category:
-                    categories[exercise] = category
-
-    except FileNotFoundError:
-        pass
-
-    return categories
 
 def print_categorized_volume(volume_sets, volume_total):
     def format_line(item):
@@ -210,63 +345,11 @@ def print_categorized_volume(volume_sets, volume_total):
         format_line=format_line,
     )
 
-def show_volume_for_range(label, start_date, end_date):
-    volume_sets, volume_total = get_volume_for_range(
-        start_date,
-        end_date
-    )
 
-    print_report_header(label.title())
-
-    if not volume_total:
-        print('    No workouts logged.')
-        return
-
-    print_categorized_volume(
-        volume_sets,
-        volume_total
-    )
-
-def show_rolling_7_day_volume():
-    today = today_date()
-
-    show_volume_for_range('7-Day Rolling Volume', days_before(today, 6), today)
-
-def show_this_week_volume():
-    today = today_date()
-
-    show_volume_for_range('Weekly volume', start_of_week(today), today)
-
-def show_two_weeks_ago_volume():
-    week_start = start_of_week(today_date())
-
-    show_volume_for_range(
-        'Two weeks ago volume',
-        days_before(week_start, 14),
-        days_before(week_start, 8)
-    )
-
-def print_reports():
-    show_this_week_volume()
-
-def show_copy_mode(exercise_name):
-    entries = [
-        row
-        for row in read_log_rows()
-        if row[2] == exercise_name
-    ]
-
-    if not entries:
-        print(f'No history found for {exercise_name}.')
-        return
-
-    last_date = entries[-1][0]
-
-    print(f'\nLast {exercise_name} workout: {last_date}\n')
-
-    for row in entries:
-        if row[0] == last_date:
-            print(f'{row[2]}, {row[3]}, {row[4]}, {row[5]}')
+# ======================================================================
+# REPORTS
+# One function per report command.
+# ======================================================================
 
 def show_today_workout():
     today = today_date()
@@ -316,6 +399,27 @@ def show_today_workout():
 
         print()
 
+
+def show_copy_mode(exercise_name):
+    entries = [
+        row
+        for row in read_log_rows()
+        if row[2] == exercise_name
+    ]
+
+    if not entries:
+        print(f'No history found for {exercise_name}.')
+        return
+
+    last_date = entries[-1][0]
+
+    print(f'\nLast {exercise_name} workout: {last_date}\n')
+
+    for row in entries:
+        if row[0] == last_date:
+            print(f'{row[2]}, {row[3]}, {row[4]}, {row[5]}')
+
+
 def show_exercise_history(*exercise_names):
     history = {}
 
@@ -356,253 +460,6 @@ def show_exercise_history(*exercise_names):
             f'{group_reps(reps_list)}'
         )
 
-def show_average_sets(weeks):
-    today = today_date()
-    days = weeks * 7
-    total_sets = count_sets_for_range(days_before(today, days - 1), today)
-
-    print_report_header(f'{weeks}-Week Average Sets')
-
-    if not total_sets:
-        print(f'    No workouts logged in the previous {days} days.')
-        return
-
-    def format_line(item):
-        exercise, average_sets = item
-
-        if average_sets.is_integer():
-            sets_display = int(average_sets)
-        else:
-            sets_display = round(average_sets, 1)
-
-        set_word = 'set/week' if average_sets == 1 else 'sets/week'
-
-        return (
-            f'    {exercise:<22}'
-            f'{sets_display:>5} {set_word}'
-        )
-
-    print_by_category(
-        [(exercise, sets / weeks) for exercise, sets in total_sets.items()],
-        sort_key=lambda item: item[1],
-        format_line=format_line,
-    )
-
-def count_sets_for_range(start_date, end_date):
-    """Count logged sets per exercise between two dates (inclusive)."""
-    total_sets = {}
-
-    for row in read_log_rows():
-        try:
-            date = parse_date(row[0])
-        except ValueError:
-            continue
-
-        if start_date <= date <= end_date:
-            exercise = row[2].strip()
-            total_sets[exercise] = total_sets.get(exercise, 0) + 1
-
-    return total_sets
-
-def get_4_week_set_totals():
-    today = today_date()
-    start_date = days_before(today, 27)
-
-    try:
-        return count_sets_for_range(start_date, today)
-    except FileNotFoundError:
-        return {}
-
-def select_workout_menu(category_name, exercise_categories):
-    categories = {
-        'push': 'Push',
-        'pull': 'Pull',
-        'legs': 'Legs/Other',
-        'other': 'Legs/Other',
-        'legs/other': 'Legs/Other',
-    }
-    category = categories.get(category_name.strip().lower())
-
-    if not category:
-        print('Use: workout push/pull/legs')
-        return None, []
-
-    exercises = [
-        exercise
-        for exercise, exercise_category in exercise_categories.items()
-        if exercise_category == category
-    ]
-
-    if not exercises:
-        print(f'No {category} exercises.')
-        return None, []
-
-    total_sets = get_4_week_set_totals()
-    exercises.sort(
-        key=lambda exercise: (
-            -total_sets.get(exercise, 0),
-            exercise.lower(),
-        )
-    )
-    return category, exercises
-
-def show_workout_menu(category, exercises):
-    if not category:
-        print('No workout selected.')
-        return
-
-    print(f'\n{category}:')
-
-    for number, exercise in enumerate(exercises, start=1):
-        print(f'{number}. {exercise}')
-
-    print()
-
-def get_volume_for_range(start_date, end_date):
-    volume_sets = {}
-    volume_total = {}
-
-    for row in read_log_rows():
-        parsed = parse_set_row(row)
-
-        if parsed is None:
-            continue
-
-        date, exercise, weight, reps, note = parsed
-
-        if start_date <= date <= end_date:
-            volume = calculate_volume(
-                exercise,
-                weight,
-                reps
-            )
-
-            volume_sets[exercise] = (
-                volume_sets.get(exercise, 0) + 1
-            )
-
-            volume_total[exercise] = (
-                volume_total.get(exercise, 0)
-                + volume
-            )
-
-    return volume_sets, volume_total
-
-def format_set_difference(value):
-    if abs(value) < 0.05:
-        value = 0
-
-    if float(value).is_integer():
-        return f'{int(value):+d}'
-
-    return f'{value:+.1f}'
-
-def format_volume_difference(value):
-    if abs(value) < 0.5:
-        value = 0
-
-    return f'{value:+,.0f}'
-
-def print_volume_comparison(
-    title,
-    current_sets,
-    current_volume,
-    comparison_sets,
-    comparison_volume
-):
-    print_report_header(title)
-
-    all_exercises = set(current_sets) | set(comparison_sets)
-
-    if not all_exercises:
-        print('    No workouts available to compare.')
-        return
-
-    items = []
-
-    for exercise in all_exercises:
-        set_difference = (
-            current_sets.get(exercise, 0)
-            - comparison_sets.get(exercise, 0)
-        )
-
-        volume_difference = (
-            current_volume.get(exercise, 0)
-            - comparison_volume.get(exercise, 0)
-        )
-
-        items.append((exercise, set_difference, volume_difference))
-
-    def format_line(item):
-        exercise, set_difference, volume_difference = item
-
-        return (
-            f'    {exercise:<18}'
-            f'{format_set_difference(set_difference):>6} sets, '
-            f'{format_volume_difference(volume_difference)} lbs'
-        )
-
-    print_by_category(
-        items,
-        sort_key=lambda item: (item[1], item[2]),
-        format_line=format_line,
-    )
-
-def compare_to_last_week():
-    today = today_date()
-    week_start = start_of_week(today)
-    start_of_last_week = days_before(week_start, 7)
-    end_of_last_week = days_before(week_start, 1)
-
-    current_sets, current_volume = get_volume_for_range(
-        week_start,
-        today
-    )
-
-    last_sets, last_volume = get_volume_for_range(
-        start_of_last_week,
-        end_of_last_week
-    )
-
-    print_volume_comparison(
-        'Current Week vs Last Week',
-        current_sets,
-        current_volume,
-        last_sets,
-        last_volume
-    )
-
-def compare_to_4_week_average():
-    today = today_date()
-    start_of_28_days = days_before(today, 27)
-
-    current_sets, current_volume = get_volume_for_range(
-        start_of_week(today),
-        today
-    )
-
-    total_sets, total_volume = get_volume_for_range(
-        start_of_28_days,
-        today
-    )
-
-    average_sets = {
-        exercise: sets / 4
-        for exercise, sets in total_sets.items()
-    }
-
-    average_volume = {
-        exercise: volume / 4
-        for exercise, volume in total_volume.items()
-    }
-
-    print_volume_comparison(
-        'Current Week vs 4-Week Average',
-        current_sets,
-        current_volume,
-        average_sets,
-        average_volume
-    )
 
 def show_weekly_exercise_history(exercise_name):
     weekly_sets = {}
@@ -654,10 +511,192 @@ def show_weekly_exercise_history(exercise_name):
             f'{volume:>7,.0f} lbs'
         )
 
-def save_exercise_category(exercise, category):
-    with open(CATEGORY_FILENAME, 'a', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow([exercise, category])
+
+def show_volume_for_range(label, start_date, end_date):
+    volume_sets, volume_total = get_volume_for_range(
+        start_date,
+        end_date
+    )
+
+    print_report_header(label.title())
+
+    if not volume_total:
+        print('    No workouts logged.')
+        return
+
+    print_categorized_volume(
+        volume_sets,
+        volume_total
+    )
+
+
+def show_this_week_volume():
+    today = today_date()
+
+    show_volume_for_range('Weekly volume', start_of_week(today), today)
+
+
+def show_two_weeks_ago_volume():
+    week_start = start_of_week(today_date())
+
+    show_volume_for_range(
+        'Two weeks ago volume',
+        days_before(week_start, 14),
+        days_before(week_start, 8)
+    )
+
+
+def show_rolling_7_day_volume():
+    today = today_date()
+
+    show_volume_for_range('7-Day Rolling Volume', days_before(today, 6), today)
+
+
+def show_average_sets(weeks):
+    today = today_date()
+    days = weeks * 7
+    total_sets = count_sets_for_range(days_before(today, days - 1), today)
+
+    print_report_header(f'{weeks}-Week Average Sets')
+
+    if not total_sets:
+        print(f'    No workouts logged in the previous {days} days.')
+        return
+
+    def format_line(item):
+        exercise, average_sets = item
+
+        if average_sets.is_integer():
+            sets_display = int(average_sets)
+        else:
+            sets_display = round(average_sets, 1)
+
+        set_word = 'set/week' if average_sets == 1 else 'sets/week'
+
+        return (
+            f'    {exercise:<22}'
+            f'{sets_display:>5} {set_word}'
+        )
+
+    print_by_category(
+        [(exercise, sets / weeks) for exercise, sets in total_sets.items()],
+        sort_key=lambda item: item[1],
+        format_line=format_line,
+    )
+
+
+def print_volume_comparison(
+    title,
+    current_sets,
+    current_volume,
+    comparison_sets,
+    comparison_volume
+):
+    print_report_header(title)
+
+    all_exercises = set(current_sets) | set(comparison_sets)
+
+    if not all_exercises:
+        print('    No workouts available to compare.')
+        return
+
+    items = []
+
+    for exercise in all_exercises:
+        set_difference = (
+            current_sets.get(exercise, 0)
+            - comparison_sets.get(exercise, 0)
+        )
+
+        volume_difference = (
+            current_volume.get(exercise, 0)
+            - comparison_volume.get(exercise, 0)
+        )
+
+        items.append((exercise, set_difference, volume_difference))
+
+    def format_line(item):
+        exercise, set_difference, volume_difference = item
+
+        return (
+            f'    {exercise:<18}'
+            f'{format_set_difference(set_difference):>6} sets, '
+            f'{format_volume_difference(volume_difference)} lbs'
+        )
+
+    print_by_category(
+        items,
+        sort_key=lambda item: (item[1], item[2]),
+        format_line=format_line,
+    )
+
+
+def compare_to_last_week():
+    today = today_date()
+    week_start = start_of_week(today)
+    start_of_last_week = days_before(week_start, 7)
+    end_of_last_week = days_before(week_start, 1)
+
+    current_sets, current_volume = get_volume_for_range(
+        week_start,
+        today
+    )
+
+    last_sets, last_volume = get_volume_for_range(
+        start_of_last_week,
+        end_of_last_week
+    )
+
+    print_volume_comparison(
+        'Current Week vs Last Week',
+        current_sets,
+        current_volume,
+        last_sets,
+        last_volume
+    )
+
+
+def compare_to_4_week_average():
+    today = today_date()
+    start_of_28_days = days_before(today, 27)
+
+    current_sets, current_volume = get_volume_for_range(
+        start_of_week(today),
+        today
+    )
+
+    total_sets, total_volume = get_volume_for_range(
+        start_of_28_days,
+        today
+    )
+
+    average_sets = {
+        exercise: sets / 4
+        for exercise, sets in total_sets.items()
+    }
+
+    average_volume = {
+        exercise: volume / 4
+        for exercise, volume in total_volume.items()
+    }
+
+    print_volume_comparison(
+        'Current Week vs 4-Week Average',
+        current_sets,
+        current_volume,
+        average_sets,
+        average_volume
+    )
+
+
+def print_reports():
+    show_this_week_volume()
+
+
+# ======================================================================
+# EXERCISE CATEGORIES
+# Sorting exercises into Push / Pull / Legs/Other.
+# ======================================================================
 
 def singularize_exercise_name(exercise):
     if exercise.endswith('ies'):
@@ -668,21 +707,6 @@ def singularize_exercise_name(exercise):
 
     return exercise
 
-def rename_exercise_in_log(old_name, new_name):
-    rows = []
-
-    with open(FILENAME) as file:
-        reader = csv.reader(file)
-
-        for row in reader:
-            if len(row) >= 3 and row[2] == old_name:
-                row[2] = new_name
-
-            rows.append(row)
-
-    with open(FILENAME, 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerows(rows)
 
 def categorize_new_exercises(new_exercises, exercise_categories):
     if not new_exercises:
@@ -750,6 +774,7 @@ def categorize_new_exercises(new_exercises, exercise_categories):
             print(f'{exercise} = {category}.')
             break
 
+
 def find_uncategorized_exercises(exercise_categories):
     uncategorized = []
 
@@ -767,6 +792,7 @@ def find_uncategorized_exercises(exercise_categories):
 
     return uncategorized
 
+
 def categorize_uncategorized_exercises(exercise_categories):
     uncategorized = find_uncategorized_exercises(
         exercise_categories
@@ -780,6 +806,85 @@ def categorize_uncategorized_exercises(exercise_categories):
         uncategorized,
         exercise_categories
     )
+
+
+# ======================================================================
+# WORKOUT MENU
+# The numbered exercise list from 'workout push/pull/legs'.
+# ======================================================================
+
+def select_workout_menu(category_name, exercise_categories):
+    categories = {
+        'push': 'Push',
+        'pull': 'Pull',
+        'legs': 'Legs/Other',
+        'other': 'Legs/Other',
+        'legs/other': 'Legs/Other',
+    }
+    category = categories.get(category_name.strip().lower())
+
+    if not category:
+        print('Use: workout push/pull/legs')
+        return None, []
+
+    exercises = [
+        exercise
+        for exercise, exercise_category in exercise_categories.items()
+        if exercise_category == category
+    ]
+
+    if not exercises:
+        print(f'No {category} exercises.')
+        return None, []
+
+    total_sets = get_4_week_set_totals()
+    exercises.sort(
+        key=lambda exercise: (
+            -total_sets.get(exercise, 0),
+            exercise.lower(),
+        )
+    )
+    return category, exercises
+
+
+def show_workout_menu(category, exercises):
+    if not category:
+        print('No workout selected.')
+        return
+
+    print(f'\n{category}:')
+
+    for number, exercise in enumerate(exercises, start=1):
+        print(f'{number}. {exercise}')
+
+    print()
+
+
+# ======================================================================
+# REHAB REMINDER
+# ======================================================================
+
+def show_rehab():
+    today = datetime.now()
+    day = today.day
+
+    if day % 2 == 0:
+        print('Even-day prehab:')
+        for exercise in EVEN_REHAB:
+            print(f'- {exercise}')
+        print('\n')
+
+    else:
+        print('Odd-day prehab:')
+        for exercise in ODD_REHAB:
+            print(f'- {exercise}')
+        print('\n')
+
+
+# ======================================================================
+# MAIN PROGRAM
+# The input loop: commands and set entry.
+# ======================================================================
 
 def show_command_menu():
     print('\nCommands:')
@@ -800,6 +905,7 @@ def show_command_menu():
     print('  cat           Categorize uncategorized exercises')
     print('  help          Show commands')
     print()
+
 
 def main():
     show_rehab()
