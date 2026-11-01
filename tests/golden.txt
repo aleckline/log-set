@@ -1,0 +1,525 @@
+=== STDOUT ===
+Odd-day prehab:
+- Wrist Curls
+- Neck
+- Quads
+- Wall Stretch
+- Glute Bridge
+
+
+> 
+Commands:
+  done          Finish workout and print reports
+  workout NAME  Select a workout
+  menu          Show workout exercises
+  r             Repeat last set
+  r2            Repeat last 2 sets
+  w / week      Show current week volume
+  today         Show today's logged sets
+  last NAME     Show last workout for exercise
+  show NAME     Same as last NAME
+  history NAMES Show history for one or more exercises
+  w-2           Show volume from two weeks ago
+  avg4          Show 4-week average sets
+  compare last  Compare current week to last week
+  compare avg4  Compare current week to 4-week average
+  cat           Categorize uncategorized exercises
+  help          Show commands
+
+> 
+========================================
+Today
+========================================
+
+    bench
+           200  3         am
+
+> 
+========================================
+Weekly Volume
+========================================
+
+Push:
+    bench                   1 set,      600 lbs
+
+Legs/Other:
+    squat                   3 sets,    5,325 lbs
+    deadlift                1 set,      945 lbs
+
+Uncategorized:
+    calves                  1 set,    1,350 lbs
+> 
+========================================
+Weekly Volume
+========================================
+
+Push:
+    bench                   1 set,      600 lbs
+
+Legs/Other:
+    squat                   3 sets,    5,325 lbs
+    deadlift                1 set,      945 lbs
+
+Uncategorized:
+    calves                  1 set,    1,350 lbs
+> 
+========================================
+Two Weeks Ago Volume
+========================================
+
+Push:
+    bench                   3 sets,    4,840 lbs
+    ohp                     1 set,      478 lbs
+    dip                     1 set,        0 lbs
+
+Pull:
+    pullup                  3 sets,    5,600 lbs
+    row                     1 set,    1,350 lbs
+    curl_iso                1 set,      150 lbs
+
+Legs/Other:
+    squat                   3 sets,    5,025 lbs
+    deadlift                1 set,      945 lbs
+
+Uncategorized:
+    calves                  1 set,    1,350 lbs
+> 
+========================================
+4-Week Average Sets
+========================================
+
+Push:
+    bench                   3.2 sets/week
+    dip                       1 set/week
+    ohp                       1 set/week
+
+Pull:
+    pullup                    3 sets/week
+    row                       1 set/week
+    curl_iso                  1 set/week
+
+Legs/Other:
+    squat                     3 sets/week
+    deadlift                  1 set/week
+
+Uncategorized:
+    calves                    1 set/week
+    odd                     0.5 sets/week
+> 
+========================================
+8-Week Average Sets
+========================================
+
+Push:
+    bench                   3.1 sets/week
+    dip                       1 set/week
+    ohp                       1 set/week
+
+Pull:
+    pullup                    3 sets/week
+    row                       1 set/week
+    curl_iso                  1 set/week
+
+Legs/Other:
+    squat                     3 sets/week
+    deadlift                  1 set/week
+
+Uncategorized:
+    calves                    1 set/week
+    odd                     0.6 sets/week
+> 
+========================================
+Current Week vs Last Week
+========================================
+
+Push:
+    dip                   -1 sets, +0 lbs
+    ohp                   -1 sets, -478 lbs
+    bench                 -2 sets, -4,350 lbs
+
+Pull:
+    curl_iso              -1 sets, -150 lbs
+    row                   -1 sets, -1,350 lbs
+    pullup                -3 sets, -5,600 lbs
+
+Legs/Other:
+    squat                 +0 sets, +150 lbs
+    deadlift              +0 sets, +0 lbs
+
+Uncategorized:
+    calves                +0 sets, +0 lbs
+    odd                   -1 sets, -100 lbs
+> 
+========================================
+Current Week vs 4-Week Average
+========================================
+
+Push:
+    dip                   -1 sets, +0 lbs
+    ohp                   -1 sets, -478 lbs
+    bench               -2.2 sets, -4,335 lbs
+
+Pull:
+    curl_iso              -1 sets, -150 lbs
+    row                   -1 sets, -1,350 lbs
+    pullup                -3 sets, -5,600 lbs
+
+Legs/Other:
+    squat                 +0 sets, +225 lbs
+    deadlift              +0 sets, +0 lbs
+
+Uncategorized:
+    calves                +0 sets, +0 lbs
+    odd                 -0.5 sets, -50 lbs
+> 
+Last bench workout: 2026-10-29
+
+bench, 200, 3, am
+> 
+Last squat workout: 2026-10-27
+
+squat, 355, 5, 
+squat, 355, 5, 
+squat, 355, 5, 
+> No history found for nothing.
+> 
+Date        	Exercise       	Weight  	Sets×Reps
+not-a-date  	bench          	135     	5
+2026-10-29  	bench          	200     	3
+2026-10-27  	squat          	355     	3x5
+2026-10-23  	bench          	225     	2x8, 6
+2026-10-20  	squat          	345     	3x5
+2026-10-16  	bench          	220     	2x8, 6
+2026-10-13  	squat          	335     	3x5
+2026-10-09  	bench          	215     	2x8, 6
+2026-10-06  	squat          	325     	3x5
+2026-10-02  	bench          	210     	2x8, 6
+2026-09-29  	squat          	315     	3x5
+2026-09-25  	bench          	205     	2x8, 6
+2026-09-22  	squat          	305     	3x5
+2026-09-18  	bench          	200     	2x8, 6
+2026-09-15  	squat          	295     	3x5
+2026-09-11  	bench          	195     	2x8, 6
+2026-09-08  	squat          	285     	3x5
+2026-09-04  	bench          	190     	2x8, 6
+2026-09-01  	squat          	275     	3x5
+2026-08-28  	bench          	185     	2x8, 6
+> No history found.
+> 
+========================================
+bench Weekly History
+========================================
+
+2026-10-26    1 set,     600 lbs
+2026-10-19    3 sets,   4,950 lbs
+2026-10-12    3 sets,   4,840 lbs
+2026-10-05    3 sets,   4,730 lbs
+2026-09-28    3 sets,   4,620 lbs
+2026-09-21    3 sets,   4,510 lbs
+2026-09-14    3 sets,   4,400 lbs
+2026-09-07    3 sets,   4,290 lbs
+2026-08-31    3 sets,   4,180 lbs
+2026-08-24    3 sets,   4,070 lbs
+> 
+========================================
+curl_iso Weekly History
+========================================
+
+2026-10-19    1 set,     300 lbs
+2026-10-12    1 set,     300 lbs
+2026-10-05    1 set,     300 lbs
+2026-09-28    1 set,     300 lbs
+2026-09-21    1 set,     300 lbs
+2026-09-14    1 set,     300 lbs
+2026-09-07    1 set,     300 lbs
+2026-08-31    1 set,     300 lbs
+2026-08-24    1 set,     300 lbs
+> 
+========================================
+nothing Weekly History
+========================================
+
+    No history found for nothing.
+> No workout selected.
+> Use: workout push/pull/legs
+> 
+Push:
+1. bench
+2. dip
+3. ohp
+
+> 
+Push:
+1. bench
+2. dip
+3. ohp
+
+> > Exercise number must be 1-3.
+> > Enter a set as exercise,weight,reps or add an optional note as a fourth value. Example: bench,185,8
+> Exercise name cannot be blank.
+> Weight must be a number. Example: bench,185,8
+> Reps must be a whole number. Example: bench,185,8
+> Reps must be a whole number. Example: bench,185,8
+> > bench, 100, 5, 
+> > bench, 100, 5, 
+> bench, 100, 5, 
+> > > bench, 185, 8, felt good
+> > bench, 185, 8, felt good
+> bench, 185, 8, felt good
+> > > 
+========================================
+Today
+========================================
+
+    bench
+           200  3         am
+           100  4x5
+           185  4x8       felt good
+
+    curl_iso
+            30  12
+
+    lunges
+            50  10        left knee ok
+
+> 
+========================================
+Weekly Volume
+========================================
+
+Push:
+    bench                   9 sets,    8,520 lbs
+
+Pull:
+    curl_iso                1 set,      180 lbs
+
+Legs/Other:
+    squat                   3 sets,    5,325 lbs
+    deadlift                1 set,      945 lbs
+
+Uncategorized:
+    calves                  1 set,    1,350 lbs
+    lunges                  1 set,      500 lbs
+> 
+Categorize new exercises? y/n: 
+calves
+1) Push
+2) Pull
+3) Legs/Other
+4) Singularize
+Category: Enter 1, 2, 3, 4, or done.
+
+calves
+1) Push
+2) Pull
+3) Legs/Other
+4) Singularize
+Category: > 
+Categorize new exercises? y/n: 
+lunges
+1) Push
+2) Pull
+3) Legs/Other
+4) Singularize
+Category: Renamed to lunge.
+
+lunge
+1) Push
+2) Pull
+3) Legs/Other
+4) Singularize
+Category: lunge is already singular.
+
+lunge
+1) Push
+2) Pull
+3) Legs/Other
+4) Singularize
+Category: lunge = Legs/Other.
+
+========================================
+Weekly Volume
+========================================
+
+Push:
+    bench                   9 sets,    8,520 lbs
+
+Pull:
+    curl_iso                1 set,      180 lbs
+
+Legs/Other:
+    squat                   3 sets,    5,325 lbs
+    deadlift                1 set,      945 lbs
+    lunge                   1 set,      500 lbs
+
+Uncategorized:
+    calves                  1 set,    1,350 lbs
+
+=== gym_log.csv ===
+2026-08-28,17:00,bench,185,8,
+2026-08-28,17:00,bench,185,8,
+2026-08-28,17:00,bench,185,6,
+2026-08-28,17:20,dip,0,12,bodyweight
+2026-08-28,17:30,ohp,95.5,5,
+2026-09-01,10:00,bench,135,5
+2026-08-28,20:00,odd,10,10,
+2026-08-30,18:00,pullup,200,10,
+2026-08-30,18:00,pullup,200,9,
+not-a-date,10:00,bench,135,5,
+2026-08-30,18:00,pullup,200,9,
+2026-08-30,18:15,row,135,10,strap
+2026-09-02,10:00,bench,heavy,5,
+2026-08-30,18:20,curl_iso,25,12,
+2026-09-01,19:00,squat,275,5,
+2026-09-01,19:00,squat,275,5,
+2026-09-01,19:00,squat,275,5,
+2026-09-01,19:30,deadlift,315,3,belt
+2026-09-01,19:40,calves,90,15,
+2026-09-04,17:00,bench,190,8,
+2026-09-04,17:00,bench,190,8,
+2026-09-04,17:00,bench,190,6,
+2026-09-04,17:20,dip,0,12,bodyweight
+2026-09-04,17:30,ohp,95.5,5,
+2026-09-06,18:00,pullup,200,10,
+2026-09-06,18:00,pullup,200,9,
+2026-09-06,18:00,pullup,200,9,
+2026-09-06,18:15,row,135,10,strap
+2026-09-06,18:20,curl_iso,25,12,
+2026-09-08,19:00,squat,285,5,
+2026-09-08,19:00,squat,285,5,
+2026-09-08,19:00,squat,285,5,
+2026-09-08,19:30,deadlift,315,3,belt
+2026-09-08,19:40,calves,90,15,
+2026-09-08,20:00,odd,10,10,
+2026-09-11,17:00,bench,195,8,
+2026-09-11,17:00,bench,195,8,
+2026-09-11,17:00,bench,195,6,
+2026-09-11,17:20,dip,0,12,bodyweight
+2026-09-11,17:30,ohp,95.5,5,
+2026-09-13,18:00,pullup,200,10,
+2026-09-13,18:00,pullup,200,9,
+2026-09-13,18:00,pullup,200,9,
+2026-09-13,18:15,row,135,10,strap
+2026-09-13,18:20,curl_iso,25,12,
+2026-09-15,19:00,squat,295,5,
+2026-09-15,19:00,squat,295,5,
+2026-09-15,19:00,squat,295,5,
+2026-09-15,19:30,deadlift,315,3,belt
+2026-09-15,19:40,calves,90,15,
+2026-09-18,17:00,bench,200,8,
+2026-09-18,17:00,bench,200,8,
+2026-09-18,17:00,bench,200,6,
+2026-09-18,17:20,dip,0,12,bodyweight
+2026-09-18,17:30,ohp,95.5,5,
+2026-09-19,20:00,odd,10,10,
+2026-09-20,18:00,pullup,200,10,
+2026-09-20,18:00,pullup,200,9,
+2026-09-20,18:00,pullup,200,9,
+2026-09-20,18:15,row,135,10,strap
+2026-09-20,18:20,curl_iso,25,12,
+2026-09-22,19:00,squat,305,5,
+2026-09-22,19:00,squat,305,5,
+2026-09-22,19:00,squat,305,5,
+2026-09-22,19:30,deadlift,315,3,belt
+2026-09-22,19:40,calves,90,15,
+2026-09-25,17:00,bench,205,8,
+2026-09-25,17:00,bench,205,8,
+2026-09-25,17:00,bench,205,6,
+2026-09-25,17:20,dip,0,12,bodyweight
+2026-09-25,17:30,ohp,95.5,5,
+2026-09-27,18:00,pullup,200,10,
+2026-09-27,18:00,pullup,200,9,
+2026-09-27,18:00,pullup,200,9,
+2026-09-27,18:15,row,135,10,strap
+2026-09-27,18:20,curl_iso,25,12,
+2026-09-29,19:00,squat,315,5,
+2026-09-29,19:00,squat,315,5,
+2026-09-29,19:00,squat,315,5,
+2026-09-29,19:30,deadlift,315,3,belt
+2026-09-29,19:40,calves,90,15,
+2026-09-30,20:00,odd,10,10,
+2026-10-02,17:00,bench,210,8,
+2026-10-02,17:00,bench,210,8,
+2026-10-02,17:00,bench,210,6,
+2026-10-02,17:20,dip,0,12,bodyweight
+2026-10-02,17:30,ohp,95.5,5,
+2026-10-04,18:00,pullup,200,10,
+2026-10-04,18:00,pullup,200,9,
+2026-10-04,18:00,pullup,200,9,
+2026-10-04,18:15,row,135,10,strap
+2026-10-04,18:20,curl_iso,25,12,
+2026-10-06,19:00,squat,325,5,
+2026-10-06,19:00,squat,325,5,
+2026-10-06,19:00,squat,325,5,
+2026-10-06,19:30,deadlift,315,3,belt
+2026-10-06,19:40,calves,90,15,
+2026-10-09,17:00,bench,215,8,
+2026-10-09,17:00,bench,215,8,
+2026-10-09,17:00,bench,215,6,
+2026-10-09,17:20,dip,0,12,bodyweight
+2026-10-09,17:30,ohp,95.5,5,
+2026-10-11,18:00,pullup,200,10,
+2026-10-11,18:00,pullup,200,9,
+2026-10-11,18:00,pullup,200,9,
+2026-10-11,18:15,row,135,10,strap
+2026-10-11,18:20,curl_iso,25,12,
+2026-10-11,20:00,odd,10,10,
+2026-10-13,19:00,squat,335,5,
+2026-10-13,19:00,squat,335,5,
+2026-10-13,19:00,squat,335,5,
+2026-10-13,19:30,deadlift,315,3,belt
+2026-10-13,19:40,calves,90,15,
+2026-10-16,17:00,bench,220,8,
+2026-10-16,17:00,bench,220,8,
+2026-10-16,17:00,bench,220,6,
+2026-10-16,17:20,dip,0,12,bodyweight
+2026-10-16,17:30,ohp,95.5,5,
+2026-10-18,18:00,pullup,200,10,
+2026-10-18,18:00,pullup,200,9,
+2026-10-18,18:00,pullup,200,9,
+2026-10-18,18:15,row,135,10,strap
+2026-10-18,18:20,curl_iso,25,12,
+2026-10-20,19:00,squat,345,5,
+2026-10-20,19:00,squat,345,5,
+2026-10-20,19:00,squat,345,5,
+2026-10-20,19:30,deadlift,315,3,belt
+2026-10-20,19:40,calves,90,15,
+2026-10-22,20:00,odd,10,10,
+2026-10-23,17:00,bench,225,8,
+2026-10-23,17:00,bench,225,8,
+2026-10-23,17:00,bench,225,6,
+2026-10-23,17:20,dip,0,12,bodyweight
+2026-10-23,17:30,ohp,95.5,5,
+2026-10-25,18:00,pullup,200,10,
+2026-10-25,18:00,pullup,200,9,
+2026-10-25,18:00,pullup,200,9,
+2026-10-25,18:15,row,135,10,strap
+2026-10-25,18:20,curl_iso,25,12,
+2026-10-27,19:00,squat,355,5,
+2026-10-27,19:00,squat,355,5,
+2026-10-27,19:00,squat,355,5,
+2026-10-27,19:30,deadlift,315,3,belt
+2026-10-27,19:40,calves,90,15,
+2026-10-29,07:00,bench,200,3,am
+2026-10-29,18:30,bench,100.0,5,
+2026-10-29,18:30,bench,100.0,5,
+2026-10-29,18:30,bench,100.0,5,
+2026-10-29,18:30,bench,100.0,5,
+2026-10-29,18:30,bench,185.0,8,felt good
+2026-10-29,18:30,bench,185.0,8,felt good
+2026-10-29,18:30,bench,185.0,8,felt good
+2026-10-29,18:30,bench,185.0,8,felt good
+2026-10-29,18:30,curl_iso,30.0,12,
+2026-10-29,18:30,lunge,50.0,10,left knee ok
+
+=== exercise_categories.csv ===
+bench,Push
+ohp,Push
+dip,Push
+pullup,Pull
+row,Pull
+curl_iso,Pull
+squat,Legs/Other
+deadlift,Legs/Other
+odd,Not A Category
+lunge,Legs/Other
