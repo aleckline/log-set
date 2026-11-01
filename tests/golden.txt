@@ -9,22 +9,24 @@ Odd-day prehab:
 
 > 
 Commands:
-  done          Finish workout and print reports
-  workout NAME  Select a workout
-  menu          Show workout exercises
-  r             Repeat last set
-  r2            Repeat last 2 sets
-  w / week      Show current week volume
-  today         Show today's logged sets
-  last NAME     Show last workout for exercise
-  show NAME     Same as last NAME
-  history NAMES Show history for one or more exercises
-  w-2           Show volume from two weeks ago
-  avg4          Show 4-week average sets
-  compare last  Compare current week to last week
-  compare avg4  Compare current week to 4-week average
-  cat           Categorize uncategorized exercises
-  help          Show commands
+  done                Finish workout and print reports
+  workout NAME        Select a workout
+  menu                Show workout exercises
+  r                   Repeat last set
+  r2                  Repeat last 2 sets
+  w / week            Show current week volume
+  today               Show today's logged sets
+  last NAME           Show last workout for exercise
+  show NAME           Same as last NAME
+  history NAMES       Show history for one or more exercises
+  weekly history NAME Show weekly sets and volume for an exercise
+  w-2                 Show volume from two weeks ago
+  avg4                Show 4-week average sets
+  avg8                Show 8-week average sets
+  compare last        Compare current week to last week
+  compare avg4        Compare current week to 4-week average
+  cat                 Categorize uncategorized exercises
+  help                Show commands
 
 > 
 ========================================
@@ -300,6 +302,32 @@ Legs/Other:
 Uncategorized:
     calves                  1 set,    1,350 lbs
     lunges                  1 set,      500 lbs
+> 
+========================================
+Current Week vs Last Week
+========================================
+
+Push:
+    bench                 +6 sets, +3,570 lbs
+    dip                   -1 sets, +0 lbs
+    ohp                   -1 sets, -478 lbs
+
+Pull:
+    curl_iso              +0 sets, +30 lbs
+    row                   -1 sets, -1,350 lbs
+    pullup                -3 sets, -5,600 lbs
+
+Legs/Other:
+    squat                 +0 sets, +150 lbs
+    deadlift              +0 sets, +0 lbs
+
+Uncategorized:
+    lunges                +1 sets, +500 lbs
+    calves                +0 sets, +0 lbs
+    odd                   -1 sets, -100 lbs
+> Enter a set as exercise,weight,reps or add an optional note as a fourth value. Example: bench,185,8
+> Enter a set as exercise,weight,reps or add an optional note as a fourth value. Example: bench,185,8
+> Enter a set as exercise,weight,reps or add an optional note as a fourth value. Example: bench,185,8
 > 
 Categorize new exercises? y/n: 
 calves
