@@ -13,8 +13,15 @@ Sections, in order (each one only uses the sections above it):
   10. Main program
 """
 
+import contextlib
 import csv
+import io
 from datetime import datetime, timedelta
+
+try:
+    import console  # Pythonista only
+except ImportError:
+    console = None
 
 
 # ======================================================================
@@ -24,6 +31,9 @@ from datetime import datetime, timedelta
 FILENAME = 'gym_log.csv'
 
 CATEGORY_FILENAME = 'exercise_categories.csv'
+
+# How many of the most recent reports stay on screen.
+REPORTS_ON_SCREEN = 2
 
 CATEGORY_ORDER = ['Push', 'Pull', 'Legs/Other', 'Uncategorized']
 
@@ -378,26 +388,20 @@ def show_today_workout():
         print('    No workouts logged today.')
         return
 
+    name_width = min(max(len(exercise) for exercise in exercise_order), 16)
+
     for exercise in exercise_order:
-        print(f'    {exercise}')
+        groups = []
 
         for (weight, note), reps_list in entries[exercise].items():
-            weight_display = format_weight(weight)
-            reps_display = group_reps(reps_list)
+            group = f'{format_weight(weight)}: {group_reps(reps_list)}'
 
             if note:
-                print(
-                    f'        {weight_display:>6}  '
-                    f'{reps_display:<10}'
-                    f'{note}'
-                )
-            else:
-                print(
-                    f'        {weight_display:>6}  '
-                    f'{reps_display}'
-                )
+                group += f' ({note})'
 
-        print()
+            groups.append(group)
+
+        print(f'  {exercise:<{name_width}}  ' + ' | '.join(groups))
 
 
 def show_copy_mode(exercise_name):
@@ -895,6 +899,13 @@ class Session:
         self.last_entries = []
         self.active_category = None
         self.active_exercises = []
+        self.reports = []
+        self.message = ''
+
+    def add_report(self, text):
+        if text:
+            self.reports.append(text)
+            self.reports = self.reports[-REPORTS_ON_SCREEN:]
 
     def remember_set(self, entry):
         self.last_entries.append(entry)
@@ -1036,11 +1047,17 @@ def command_workout(session, argument):
     if category:
         session.active_category = category
         session.active_exercises = exercises
-        show_workout_menu(category, exercises)
 
 
 def command_menu(session, argument):
-    show_workout_menu(session.active_category, session.active_exercises)
+    # The menu is always on screen; this just redraws it.
+    if not session.active_category:
+        print('No workout selected.')
+
+
+def command_today(session, argument):
+    # Today's sets are always on screen; this just redraws them.
+    pass
 
 
 def command_repeat(session, argument):
@@ -1091,7 +1108,7 @@ COMMANDS = [
     ('r', 'Repeat last set', command_repeat),
     ('r2', 'Repeat last 2 sets', command_repeat_two),
     ('w / week', 'Show current week volume', lambda session, argument: show_this_week_volume()),
-    ('today', "Show today's logged sets", lambda session, argument: show_today_workout()),
+    ('today', "Show today's logged sets", command_today),
     ('last NAME', 'Show last workout for exercise', command_last),
     ('show NAME', 'Same as last NAME', command_last),
     ('history NAMES', 'Show history for one or more exercises', command_history),
@@ -1141,24 +1158,96 @@ def show_command_menu():
     print()
 
 
-def main():
-    show_rehab()
+# ----------------------------------------------------------------------
+# The screen. After every entry the console is cleared and redrawn as:
+#   the last two reports, the workout menu, today's sets, then any
+#   short message (an error, or the set that 'r' repeated).
+# ----------------------------------------------------------------------
 
+# Commands whose output is a short message, not a report.
+MESSAGE_COMMANDS = [
+    command_workout,
+    command_menu,
+    command_today,
+    command_repeat,
+    command_repeat_two,
+]
+
+# Commands that ask questions with input(), so their output can't be held back.
+INTERACTIVE_COMMANDS = [command_done, command_categorize]
+
+
+def clear_screen():
+    if console is not None and hasattr(console, 'clear'):
+        console.clear()
+    else:
+        # Not in Pythonista (for example the PC test): mark where it would clear.
+        print('\n' + '~' * 40 + ' (screen cleared)')
+
+
+def capture_output(function, *args):
+    """Run function and return (its return value, what it printed)."""
+    buffer = io.StringIO()
+
+    with contextlib.redirect_stdout(buffer):
+        result = function(*args)
+
+    return result, buffer.getvalue().strip('\n')
+
+
+def draw_screen(session):
+    clear_screen()
+
+    print('\n\n'.join(session.reports))
+
+    if session.active_category:
+        show_workout_menu(session.active_category, session.active_exercises)
+
+    show_today_workout()
+
+    if session.message:
+        print()
+        print(session.message)
+
+    print()
+
+
+def handle_entry(session, entry):
+    """Run one typed line. Returns True when the program should end."""
+    handler, argument = find_command(entry)
+
+    if handler is None:
+        _, session.message = capture_output(log_entered_set, session, entry)
+        return False
+
+    if handler in INTERACTIVE_COMMANDS:
+        return handler(session, argument)
+
+    finished, output = capture_output(handler, session, argument)
+
+    if handler in MESSAGE_COMMANDS:
+        session.message = output
+    else:
+        session.add_report(output)
+
+    return finished
+
+
+def main():
     session = Session()
 
+    _, rehab = capture_output(show_rehab)
+    session.add_report(rehab)
+
     while True:
+        draw_screen(session)
         entry = input('> ').strip()
+        session.message = ''
 
         if not entry:
             continue
 
-        handler, argument = find_command(entry)
-
-        if handler is None:
-            log_entered_set(session, entry)
-            continue
-
-        if handler(session, argument):
+        if handle_entry(session, entry):
             break
 
 
