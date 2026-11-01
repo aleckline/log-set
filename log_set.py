@@ -424,8 +424,19 @@ def show_copy_mode(exercise_name):
             print(f'{row[2]}, {row[3]}, {row[4]}, {row[5]}')
 
 
-def show_exercise_history(*exercise_names):
+# How far back the plain 'history' command looks.
+HISTORY_WEEKS = 8
+
+
+def show_exercise_history(*exercise_names, weeks=None):
+    """Print the history of the named exercises.
+
+    weeks=None shows everything; otherwise only the last that many weeks.
+    """
     history = {}
+
+    if weeks is not None:
+        start_date = days_before(today_date(), weeks * 7 - 1)
 
     for row in read_log_rows():
         exercise = row[2]
@@ -437,6 +448,9 @@ def show_exercise_history(*exercise_names):
             date = row[0]
             weight = float(row[3])
             reps = int(float(row[4]))
+
+            if weeks is not None and parse_date(date) < start_date:
+                continue
         except ValueError:
             continue
 
@@ -445,8 +459,14 @@ def show_exercise_history(*exercise_names):
         history.setdefault(key, []).append(reps)
 
     if not history:
-        print('No history found.')
+        if weeks is None:
+            print('No history found.')
+        else:
+            print(f'No history in the last {weeks} weeks. Try fh NAMES for all of it.')
         return
+
+    if weeks is not None:
+        print(f'\nLast {weeks} weeks (fh NAMES shows all)')
 
     print(f'\n{"Date":<12}\t{"Exercise":<15}\t{"Weight":<8}\tSets×Reps')
 
@@ -1082,6 +1102,10 @@ def command_last(session, argument):
 
 
 def command_history(session, argument):
+    show_exercise_history(*argument.split(), weeks=HISTORY_WEEKS)
+
+
+def command_full_history(session, argument):
     show_exercise_history(*argument.split())
 
 
@@ -1111,7 +1135,8 @@ COMMANDS = [
     ('today', "Show today's logged sets", command_today),
     ('last NAME', 'Show last workout for exercise', command_last),
     ('show NAME', 'Same as last NAME', command_last),
-    ('history NAMES', 'Show history for one or more exercises', command_history),
+    ('history NAMES', 'Show last 8 weeks for exercises', command_history),
+    ('fh NAMES', 'Show full history for exercises', command_full_history),
     ('weekly history NAME', 'Show weekly sets and volume for an exercise', command_weekly_history),
     ('w-2', 'Show volume from two weeks ago', lambda session, argument: show_two_weeks_ago_volume()),
     ('avg4', 'Show 4-week average sets', lambda session, argument: show_average_sets(4)),
