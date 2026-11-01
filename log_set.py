@@ -269,10 +269,6 @@ def print_reports():
     show_volume_for_range('Weekly volume', start_of_week, end_of_week)
     #show_volume_for_range('Last week volume', start_of_last_week, end_of_last_week)
 
-show_rehab()
-
-last_entries = []
-
 def show_copy_mode(exercise_name):
     entries = []
 
@@ -780,7 +776,7 @@ def print_volume_comparison(
     current_volume,
     comparison_sets,
     comparison_volume
-	):
+):
     print_report_header(title)
 
     all_exercises = set(current_sets) | set(comparison_sets)
@@ -1142,103 +1138,82 @@ def categorize_uncategorized_exercises(exercise_categories):
     )
 
 def show_command_menu():
-	print('\nCommands:')
-	print('  done          Finish workout and print reports')
-	print('  workout NAME  Select a workout')
-	print('  menu          Show workout exercises')
-	print('  r             Repeat last set')
-	print('  r2            Repeat last 2 sets')
-	print('  w / week      Show current week volume')
-	print('  today         Show today\'s logged sets')
-	print('  last NAME     Show last workout for exercise')
-	print('  show NAME     Same as last NAME')
-	print('  history NAMES Show history for one or more exercises')
-	print('  w-2           Show volume from two weeks ago')
-	print('  avg4          Show 4-week average sets')
-	print('  compare last  Compare current week to last week')
-	print('  compare avg4  Compare current week to 4-week average')
-	print('  cat           Categorize uncategorized exercises')
-	print('  help          Show commands')
-	print()
+    print('\nCommands:')
+    print('  done          Finish workout and print reports')
+    print('  workout NAME  Select a workout')
+    print('  menu          Show workout exercises')
+    print('  r             Repeat last set')
+    print('  r2            Repeat last 2 sets')
+    print('  w / week      Show current week volume')
+    print('  today         Show today\'s logged sets')
+    print('  last NAME     Show last workout for exercise')
+    print('  show NAME     Same as last NAME')
+    print('  history NAMES Show history for one or more exercises')
+    print('  w-2           Show volume from two weeks ago')
+    print('  avg4          Show 4-week average sets')
+    print('  compare last  Compare current week to last week')
+    print('  compare avg4  Compare current week to 4-week average')
+    print('  cat           Categorize uncategorized exercises')
+    print('  help          Show commands')
+    print()
 
-exercise_categories = load_exercise_categories()
-new_exercises = []
-active_category = None
-active_exercises = []
+def main():
+    show_rehab()
 
-while True:
-    entry = input('> ')
+    last_entries = []
+    exercise_categories = load_exercise_categories()
+    new_exercises = []
+    active_category = None
+    active_exercises = []
 
-    entry = entry.strip()
+    while True:
+        entry = input('> ')
 
-    if entry == 'help':
-        show_command_menu()
-        continue
+        entry = entry.strip()
 
-    if entry == 'menu':
-        show_workout_menu(active_category, active_exercises)
-        continue
+        if entry == 'help':
+            show_command_menu()
+            continue
 
-    if entry.startswith('workout '):
-        new_category, new_exercises_menu = select_workout_menu(
-            entry.replace('workout ', '', 1),
-            exercise_categories,
-        )
-
-        if new_category:
-            active_category = new_category
-            active_exercises = new_exercises_menu
+        if entry == 'menu':
             show_workout_menu(active_category, active_exercises)
-
-        continue
-
-    if entry == 'cat':
-        categorize_uncategorized_exercises(
-            exercise_categories
-        )
-        continue
-
-    if entry == 'done':
-        categorize_new_exercises(
-            new_exercises,
-            exercise_categories
-        )
-
-        print_reports()
-        break
-
-    if entry == 'r':
-        if not last_entries:
-            print('No previous set to repeat.')
             continue
 
-        last = last_entries[-1]
+        if entry.startswith('workout '):
+            new_category, new_exercises_menu = select_workout_menu(
+                entry.replace('workout ', '', 1),
+                exercise_categories,
+            )
 
-        log_set(
-            last['exercise'],
-            last['weight'],
-            last['reps'],
-            last['note']
-        )
+            if new_category:
+                active_category = new_category
+                active_exercises = new_exercises_menu
+                show_workout_menu(active_category, active_exercises)
 
-        last_entries.append(last.copy())
-        last_entries = last_entries[-10:]
-
-        print(
-            f"> {last['exercise']}, "
-            f"{format_weight(last['weight'])}, "
-            f"{last['reps']}, {last['note']}"
-        )
-        continue
-
-    if entry == 'r2':
-        if len(last_entries) < 2:
-            print('Need at least two previous sets.')
             continue
 
-        entries_to_repeat = last_entries[-2:]
+        if entry == 'cat':
+            categorize_uncategorized_exercises(
+                exercise_categories
+            )
+            continue
 
-        for last in entries_to_repeat:
+        if entry == 'done':
+            categorize_new_exercises(
+                new_exercises,
+                exercise_categories
+            )
+
+            print_reports()
+            break
+
+        if entry == 'r':
+            if not last_entries:
+                print('No previous set to repeat.')
+                continue
+
+            last = last_entries[-1]
+
             log_set(
                 last['exercise'],
                 last['weight'],
@@ -1247,165 +1222,194 @@ while True:
             )
 
             last_entries.append(last.copy())
+            last_entries = last_entries[-10:]
 
             print(
                 f"> {last['exercise']}, "
                 f"{format_weight(last['weight'])}, "
                 f"{last['reps']}, {last['note']}"
             )
-
-        last_entries = last_entries[-10:]
-        continue
-
-    if entry.startswith('show '):
-        exercise_name = entry.replace('show ', '', 1).strip()
-        show_copy_mode(exercise_name)
-        continue
-
-    if entry.startswith('weekly history '):
-        exercise_name = entry.replace('weekly history ', '', 1).strip()
-        show_weekly_exercise_history(exercise_name)
-        continue
-        
-
-
-    if entry.startswith('last '):
-        exercise_name = entry.replace('last ', '', 1).strip()
-        show_copy_mode(exercise_name)
-        continue
-
-    if entry.startswith('history '):
-        exercises = entry.split()[1:]
-        show_exercise_history(*exercises)
-        continue
-
-    if entry in ['w', 'week']:
-        today = datetime.now().date()
-        start_of_week = today.fromordinal(
-            today.toordinal() - today.weekday()
-        )
-
-        show_volume_for_range(
-            'Weekly volume',
-            start_of_week,
-            today
-        )
-        continue
-
-    if entry == 'today':
-        show_today_workout()
-        continue
-
-    if entry == 'w-2':
-        today = datetime.now().date()
-        start_of_week = today.fromordinal(
-            today.toordinal() - today.weekday()
-        )
-
-        start_date = start_of_week.fromordinal(
-            start_of_week.toordinal() - 14
-        )
-        end_date = start_of_week.fromordinal(
-            start_of_week.toordinal() - 8
-        )
-
-        show_volume_for_range(
-            'Two weeks ago volume',
-            start_date,
-            end_date
-        )
-        continue
-
-    if entry == 'avg4':
-        show_4_week_average()
-        continue
-        
-    if entry == 'avg8':
-        show_8_week_average()
-        continue
-
-    if entry.strip().lower() == 'compare last':
-        compare_to_last_week()
-        continue
-
-    if entry.strip().lower() == 'compare avg4':
-        compare_to_4_week_average()
-        continue
-
-    if not entry:
-        continue
-
-    parts = entry.split(',')
-
-    if len(parts) < 3:
-        print(
-            'Enter a set as exercise,weight,reps '
-            'or add an optional note as a fourth value. '
-            'Example: bench,185,8'
-        )
-        continue
-
-    exercise = parts[0].strip()
-
-    if exercise.isdigit():
-        exercise_number = int(exercise)
-
-        if not active_exercises:
-            print('Select a workout first.')
             continue
 
-        if not 1 <= exercise_number <= len(active_exercises):
-            print(
-                f'Exercise number must be 1-'
-                f'{len(active_exercises)}.'
+        if entry == 'r2':
+            if len(last_entries) < 2:
+                print('Need at least two previous sets.')
+                continue
+
+            entries_to_repeat = last_entries[-2:]
+
+            for last in entries_to_repeat:
+                log_set(
+                    last['exercise'],
+                    last['weight'],
+                    last['reps'],
+                    last['note']
+                )
+
+                last_entries.append(last.copy())
+
+                print(
+                    f"> {last['exercise']}, "
+                    f"{format_weight(last['weight'])}, "
+                    f"{last['reps']}, {last['note']}"
+                )
+
+            last_entries = last_entries[-10:]
+            continue
+
+        if entry.startswith('show '):
+            exercise_name = entry.replace('show ', '', 1).strip()
+            show_copy_mode(exercise_name)
+            continue
+
+        if entry.startswith('weekly history '):
+            exercise_name = entry.replace('weekly history ', '', 1).strip()
+            show_weekly_exercise_history(exercise_name)
+            continue
+
+
+
+        if entry.startswith('last '):
+            exercise_name = entry.replace('last ', '', 1).strip()
+            show_copy_mode(exercise_name)
+            continue
+
+        if entry.startswith('history '):
+            exercises = entry.split()[1:]
+            show_exercise_history(*exercises)
+            continue
+
+        if entry in ['w', 'week']:
+            today = datetime.now().date()
+            start_of_week = today.fromordinal(
+                today.toordinal() - today.weekday()
+            )
+
+            show_volume_for_range(
+                'Weekly volume',
+                start_of_week,
+                today
             )
             continue
 
-        exercise = active_exercises[exercise_number - 1]
+        if entry == 'today':
+            show_today_workout()
+            continue
 
-    if not exercise:
-        print('Exercise name cannot be blank.')
-        continue
+        if entry == 'w-2':
+            today = datetime.now().date()
+            start_of_week = today.fromordinal(
+                today.toordinal() - today.weekday()
+            )
 
-    weight_text = parts[1].strip()
-    reps_text = parts[2].strip()
+            start_date = start_of_week.fromordinal(
+                start_of_week.toordinal() - 14
+            )
+            end_date = start_of_week.fromordinal(
+                start_of_week.toordinal() - 8
+            )
 
-    try:
-        weight = float(weight_text)
-    except ValueError:
-        print('Weight must be a number. Example: bench,185,8')
-        continue
+            show_volume_for_range(
+                'Two weeks ago volume',
+                start_date,
+                end_date
+            )
+            continue
 
-    try:
-        reps_value = float(reps_text)
-    except ValueError:
-        print('Reps must be a whole number. Example: bench,185,8')
-        continue
+        if entry == 'avg4':
+            show_4_week_average()
+            continue
 
-    if not reps_value.is_integer():
-        print('Reps must be a whole number. Example: bench,185,8')
-        continue
+        if entry == 'avg8':
+            show_8_week_average()
+            continue
 
-    reps = int(reps_value)
+        if entry.strip().lower() == 'compare last':
+            compare_to_last_week()
+            continue
 
-    if len(parts) > 3:
-        note = parts[3].strip()
-    else:
-        note = ''
+        if entry.strip().lower() == 'compare avg4':
+            compare_to_4_week_average()
+            continue
 
-    log_set(exercise, weight, reps, note)
+        if not entry:
+            continue
 
-    if (
-        exercise not in exercise_categories
-        and exercise not in new_exercises
-    ):
-        new_exercises.append(exercise)
+        parts = entry.split(',')
 
-    last_entries.append({
-        'exercise': exercise,
-        'weight': weight,
-        'reps': reps,
-        'note': note,
-    })
+        if len(parts) < 3:
+            print(
+                'Enter a set as exercise,weight,reps '
+                'or add an optional note as a fourth value. '
+                'Example: bench,185,8'
+            )
+            continue
 
-    last_entries = last_entries[-10:]
+        exercise = parts[0].strip()
+
+        if exercise.isdigit():
+            exercise_number = int(exercise)
+
+            if not active_exercises:
+                print('Select a workout first.')
+                continue
+
+            if not 1 <= exercise_number <= len(active_exercises):
+                print(
+                    f'Exercise number must be 1-'
+                    f'{len(active_exercises)}.'
+                )
+                continue
+
+            exercise = active_exercises[exercise_number - 1]
+
+        if not exercise:
+            print('Exercise name cannot be blank.')
+            continue
+
+        weight_text = parts[1].strip()
+        reps_text = parts[2].strip()
+
+        try:
+            weight = float(weight_text)
+        except ValueError:
+            print('Weight must be a number. Example: bench,185,8')
+            continue
+
+        try:
+            reps_value = float(reps_text)
+        except ValueError:
+            print('Reps must be a whole number. Example: bench,185,8')
+            continue
+
+        if not reps_value.is_integer():
+            print('Reps must be a whole number. Example: bench,185,8')
+            continue
+
+        reps = int(reps_value)
+
+        if len(parts) > 3:
+            note = parts[3].strip()
+        else:
+            note = ''
+
+        log_set(exercise, weight, reps, note)
+
+        if (
+            exercise not in exercise_categories
+            and exercise not in new_exercises
+        ):
+            new_exercises.append(exercise)
+
+        last_entries.append({
+            'exercise': exercise,
+            'weight': weight,
+            'reps': reps,
+            'note': note,
+        })
+
+        last_entries = last_entries[-10:]
+
+
+if __name__ == '__main__':
+    main()
