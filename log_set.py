@@ -1,9 +1,11 @@
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 
 FILENAME = 'gym_log.csv'
 
 CATEGORY_FILENAME = 'exercise_categories.csv'
+
+CATEGORY_ORDER = ['Push', 'Pull', 'Legs/Other', 'Uncategorized']
 
 ODD_REHAB = ['Wrist Curls', 'Neck', 'Quads', 'Wall Stretch', 'Glute Bridge']
 EVEN_REHAB = ['Straight Leg Raise', 'Copenhagen Plank', 'Calves', 'Hamstrings']
@@ -98,6 +100,76 @@ def print_report_header(title):
     print('=' * 40)
     print()
 
+def today_date():
+    return datetime.now().date()
+
+def days_before(day, days):
+    return day - timedelta(days=days)
+
+def start_of_week(day):
+    """Monday of the week containing day."""
+    return days_before(day, day.weekday())
+
+def group_reps(reps_list):
+    """Turn [8, 8, 6] into '2x8, 6'."""
+    grouped = []
+    current = reps_list[0]
+    count = 1
+
+    for reps in reps_list[1:]:
+        if reps == current:
+            count += 1
+        else:
+            grouped.append(f'{count}x{current}' if count > 1 else str(current))
+            current = reps
+            count = 1
+
+    grouped.append(f'{count}x{current}' if count > 1 else str(current))
+
+    return ', '.join(grouped)
+
+def print_by_category(items, sort_key, format_line):
+    """Print items grouped under Push / Pull / Legs/Other / Uncategorized.
+
+    Each item is a tuple whose first value is the exercise name. Within a
+    category, items are sorted by sort_key, largest first, and each one is
+    printed with format_line(item).
+    """
+    exercise_categories = load_exercise_categories()
+
+    categorized_exercises = {
+        category: []
+        for category in CATEGORY_ORDER
+    }
+
+    for item in items:
+        category = exercise_categories.get(item[0], 'Uncategorized')
+
+        if category not in categorized_exercises:
+            category = 'Uncategorized'
+
+        categorized_exercises[category].append(item)
+
+    printed_category = False
+
+    for category in CATEGORY_ORDER:
+        exercises = categorized_exercises[category]
+
+        if not exercises:
+            continue
+
+        if printed_category:
+            print()
+
+        print(f'{category}:')
+
+        exercises.sort(key=sort_key, reverse=True)
+
+        for item in exercises:
+            print(format_line(item))
+
+        printed_category = True
+
 def load_exercise_categories():
     categories = {}
 
@@ -121,62 +193,22 @@ def load_exercise_categories():
     return categories
 
 def print_categorized_volume(volume_sets, volume_total):
-    exercise_categories = load_exercise_categories()
+    def format_line(item):
+        exercise, volume = item
+        sets = volume_sets[exercise]
+        set_word = 'set' if sets == 1 else 'sets'
 
-    category_order = [
-        'Push',
-        'Pull',
-        'Legs/Other',
-        'Uncategorized',
-    ]
-
-    categorized_exercises = {
-        category: []
-        for category in category_order
-    }
-
-    for exercise, volume in volume_total.items():
-        category = exercise_categories.get(
-            exercise,
-            'Uncategorized'
+        return (
+            f'    {exercise:<22}'
+            f'{sets:>3} {set_word}, '
+            f'{volume:>8,.0f} lbs'
         )
 
-        if category not in categorized_exercises:
-            category = 'Uncategorized'
-
-        categorized_exercises[category].append(
-            (exercise, volume)
-        )
-
-    printed_category = False
-
-    for category in category_order:
-        exercises = categorized_exercises[category]
-
-        if not exercises:
-            continue
-
-        if printed_category:
-            print()
-
-        print(f'{category}:')
-
-        exercises.sort(
-            key=lambda item: item[1],
-            reverse=True
-        )
-
-        for exercise, volume in exercises:
-            sets = volume_sets[exercise]
-            set_word = 'set' if sets == 1 else 'sets'
-
-            print(
-                f'    {exercise:<22}'
-                f'{sets:>3} {set_word}, '
-                f'{volume:>8,.0f} lbs'
-            )
-
-        printed_category = True
+    print_by_category(
+        volume_total.items(),
+        sort_key=lambda item: item[1],
+        format_line=format_line,
+    )
 
 def show_volume_for_range(label, start_date, end_date):
     volume_sets, volume_total = get_volume_for_range(
@@ -196,24 +228,26 @@ def show_volume_for_range(label, start_date, end_date):
     )
 
 def show_rolling_7_day_volume():
-    today = datetime.now().date()
+    today = today_date()
 
-    start_date = today.fromordinal(
-        today.toordinal() - 6
+    show_volume_for_range('7-Day Rolling Volume', days_before(today, 6), today)
+
+def show_this_week_volume():
+    today = today_date()
+
+    show_volume_for_range('Weekly volume', start_of_week(today), today)
+
+def show_two_weeks_ago_volume():
+    week_start = start_of_week(today_date())
+
+    show_volume_for_range(
+        'Two weeks ago volume',
+        days_before(week_start, 14),
+        days_before(week_start, 8)
     )
 
-    show_volume_for_range('7-Day Rolling Volume', start_date, today)
-
 def print_reports():
-    today = datetime.now().date()
-    start_of_week = today.fromordinal(today.toordinal() - today.weekday())
-    end_of_week = today
-
-    start_of_last_week = start_of_week.fromordinal(start_of_week.toordinal() - 7)
-    end_of_last_week = start_of_week.fromordinal(start_of_week.toordinal() - 1)
-
-    show_volume_for_range('Weekly volume', start_of_week, end_of_week)
-    #show_volume_for_range('Last week volume', start_of_last_week, end_of_last_week)
+    show_this_week_volume()
 
 def show_copy_mode(exercise_name):
     entries = [
@@ -235,7 +269,7 @@ def show_copy_mode(exercise_name):
             print(f'{row[2]}, {row[3]}, {row[4]}, {row[5]}')
 
 def show_today_workout():
-    today = datetime.now().date()
+    today = today_date()
     entries = {}
     exercise_order = []
 
@@ -265,22 +299,8 @@ def show_today_workout():
         print(f'    {exercise}')
 
         for (weight, note), reps_list in entries[exercise].items():
-            grouped = []
-            current = reps_list[0]
-            count = 1
-
-            for reps in reps_list[1:]:
-                if reps == current:
-                    count += 1
-                else:
-                    grouped.append(f'{count}x{current}' if count > 1 else str(current))
-                    current = reps
-                    count = 1
-
-            grouped.append(f'{count}x{current}' if count > 1 else str(current))
-
-            weight_display = int(weight) if weight.is_integer() else weight
-            reps_display = ', '.join(grouped)
+            weight_display = format_weight(weight)
+            reps_display = group_reps(reps_list)
 
             if note:
                 print(
@@ -329,110 +349,44 @@ def show_exercise_history(*exercise_names):
     )
 
     for (date, exercise, weight), reps_list in sorted_history:
-
-        grouped = []
-        current = reps_list[0]
-        count = 1
-
-        for reps in reps_list[1:]:
-            if reps == current:
-                count += 1
-            else:
-                grouped.append(f'{count}x{current}' if count > 1 else str(current))
-                current = reps
-                count = 1
-
-        grouped.append(f'{count}x{current}' if count > 1 else str(current))
-
-        weight_display = int(weight) if weight.is_integer() else weight
-
         print(
             f'{date:<12}\t'
             f'{exercise:<15}\t'
-            f'{weight_display:<8}\t'
-            f'{", ".join(grouped)}'
+            f'{format_weight(weight):<8}\t'
+            f'{group_reps(reps_list)}'
         )
 
-def show_4_week_average():
-    today = datetime.now().date()
+def show_average_sets(weeks):
+    today = today_date()
+    days = weeks * 7
+    total_sets = count_sets_for_range(days_before(today, days - 1), today)
 
-    start_date = today.fromordinal(
-        today.toordinal() - 27
-    )
-
-    total_sets = count_sets_for_range(start_date, today)
-
-    print_report_header('4-Week Average Sets')
+    print_report_header(f'{weeks}-Week Average Sets')
 
     if not total_sets:
-        print('    No workouts logged in the previous 28 days.')
+        print(f'    No workouts logged in the previous {days} days.')
         return
 
-    exercise_categories = load_exercise_categories()
+    def format_line(item):
+        exercise, average_sets = item
 
-    category_order = [
-        'Push',
-        'Pull',
-        'Legs/Other',
-        'Uncategorized',
-    ]
+        if average_sets.is_integer():
+            sets_display = int(average_sets)
+        else:
+            sets_display = round(average_sets, 1)
 
-    categorized_exercises = {
-        category: []
-        for category in category_order
-    }
+        set_word = 'set/week' if average_sets == 1 else 'sets/week'
 
-    for exercise, sets in total_sets.items():
-        category = exercise_categories.get(
-            exercise,
-            'Uncategorized'
+        return (
+            f'    {exercise:<22}'
+            f'{sets_display:>5} {set_word}'
         )
 
-        if category not in categorized_exercises:
-            category = 'Uncategorized'
-
-        average_sets = sets / 4
-
-        categorized_exercises[category].append(
-            (exercise, average_sets)
-        )
-
-    printed_category = False
-
-    for category in category_order:
-        exercises = categorized_exercises[category]
-
-        if not exercises:
-            continue
-
-        if printed_category:
-            print()
-
-        print(f'{category}:')
-
-        exercises.sort(
-            key=lambda item: item[1],
-            reverse=True
-        )
-
-        for exercise, average_sets in exercises:
-            if average_sets.is_integer():
-                sets_display = int(average_sets)
-            else:
-                sets_display = round(average_sets, 1)
-
-            set_word = (
-                'set/week'
-                if average_sets == 1
-                else 'sets/week'
-            )
-
-            print(
-                f'    {exercise:<22}'
-                f'{sets_display:>5} {set_word}'
-            )
-
-        printed_category = True
+    print_by_category(
+        [(exercise, sets / weeks) for exercise, sets in total_sets.items()],
+        sort_key=lambda item: item[1],
+        format_line=format_line,
+    )
 
 def count_sets_for_range(start_date, end_date):
     """Count logged sets per exercise between two dates (inclusive)."""
@@ -451,8 +405,8 @@ def count_sets_for_range(start_date, end_date):
     return total_sets
 
 def get_4_week_set_totals():
-    today = datetime.now().date()
-    start_date = today.fromordinal(today.toordinal() - 27)
+    today = today_date()
+    start_date = days_before(today, 27)
 
     try:
         return count_sets_for_range(start_date, today)
@@ -503,87 +457,6 @@ def show_workout_menu(category, exercises):
         print(f'{number}. {exercise}')
 
     print()
-
-def show_8_week_average():
-    today = datetime.now().date()
-
-    start_date = today.fromordinal(
-        today.toordinal() - 55
-    )
-
-    total_sets = count_sets_for_range(start_date, today)
-
-    print_report_header('8-Week Average Sets')
-
-    if not total_sets:
-        print('    No workouts logged in the previous 56 days.')
-        return
-
-    exercise_categories = load_exercise_categories()
-
-    category_order = [
-        'Push',
-        'Pull',
-        'Legs/Other',
-        'Uncategorized',
-    ]
-
-    categorized_exercises = {
-        category: []
-        for category in category_order
-    }
-
-    for exercise, sets in total_sets.items():
-        category = exercise_categories.get(
-            exercise,
-            'Uncategorized'
-        )
-
-        if category not in categorized_exercises:
-            category = 'Uncategorized'
-
-        average_sets = sets / 8
-
-        categorized_exercises[category].append(
-            (exercise, average_sets)
-        )
-
-    printed_category = False
-
-    for category in category_order:
-        exercises = categorized_exercises[category]
-
-        if not exercises:
-            continue
-
-        if printed_category:
-            print()
-
-        print(f'{category}:')
-
-        exercises.sort(
-            key=lambda item: item[1],
-            reverse=True
-        )
-
-        for exercise, average_sets in exercises:
-            if average_sets.is_integer():
-                sets_display = int(average_sets)
-            else:
-                sets_display = round(average_sets, 1)
-
-            set_word = (
-                'set/week'
-                if average_sets == 1
-                else 'sets/week'
-            )
-
-            print(
-                f'    {exercise:<22}'
-                f'{sets_display:>5} {set_word}'
-            )
-
-        printed_category = True
 
 def get_volume_for_range(start_date, end_date):
     volume_sets = {}
@@ -645,19 +518,7 @@ def print_volume_comparison(
         print('    No workouts available to compare.')
         return
 
-    exercise_categories = load_exercise_categories()
-
-    category_order = [
-        'Push',
-        'Pull',
-        'Legs/Other',
-        'Uncategorized',
-    ]
-
-    categorized_exercises = {
-        category: []
-        for category in category_order
-    }
+    items = []
 
     for exercise in all_exercises:
         set_difference = (
@@ -670,82 +531,31 @@ def print_volume_comparison(
             - comparison_volume.get(exercise, 0)
         )
 
-        category = exercise_categories.get(
-            exercise,
-            'Uncategorized'
+        items.append((exercise, set_difference, volume_difference))
+
+    def format_line(item):
+        exercise, set_difference, volume_difference = item
+
+        return (
+            f'    {exercise:<18}'
+            f'{format_set_difference(set_difference):>6} sets, '
+            f'{format_volume_difference(volume_difference)} lbs'
         )
 
-        if category not in categorized_exercises:
-            category = 'Uncategorized'
-
-        categorized_exercises[category].append(
-            (
-                exercise,
-                set_difference,
-                volume_difference,
-            )
-        )
-
-    printed_category = False
-
-    for category in category_order:
-        exercises = categorized_exercises[category]
-
-        if not exercises:
-            continue
-
-        if printed_category:
-            print()
-
-        print(f'{category}:')
-
-        exercises.sort(
-            key=lambda item: (
-                item[1],
-                item[2],
-            ),
-            reverse=True
-        )
-
-        for (
-            exercise,
-            set_difference,
-            volume_difference,
-        ) in exercises:
-
-            sets_display = format_set_difference(
-                set_difference
-            )
-
-            volume_display = format_volume_difference(
-                volume_difference
-            )
-
-            print(
-                f'    {exercise:<18}'
-                f'{sets_display:>6} sets, '
-                f'{volume_display} lbs'
-            )
-
-        printed_category = True
+    print_by_category(
+        items,
+        sort_key=lambda item: (item[1], item[2]),
+        format_line=format_line,
+    )
 
 def compare_to_last_week():
-    today = datetime.now().date()
-
-    start_of_week = today.fromordinal(
-        today.toordinal() - today.weekday()
-    )
-
-    start_of_last_week = start_of_week.fromordinal(
-        start_of_week.toordinal() - 7
-    )
-
-    end_of_last_week = start_of_week.fromordinal(
-        start_of_week.toordinal() - 1
-    )
+    today = today_date()
+    week_start = start_of_week(today)
+    start_of_last_week = days_before(week_start, 7)
+    end_of_last_week = days_before(week_start, 1)
 
     current_sets, current_volume = get_volume_for_range(
-        start_of_week,
+        week_start,
         today
     )
 
@@ -763,18 +573,11 @@ def compare_to_last_week():
     )
 
 def compare_to_4_week_average():
-    today = datetime.now().date()
-
-    start_of_week = today.fromordinal(
-        today.toordinal() - today.weekday()
-    )
-
-    start_of_28_days = today.fromordinal(
-        today.toordinal() - 27
-    )
+    today = today_date()
+    start_of_28_days = days_before(today, 27)
 
     current_sets, current_volume = get_volume_for_range(
-        start_of_week,
+        start_of_week(today),
         today
     )
 
@@ -817,9 +620,7 @@ def show_weekly_exercise_history(exercise_name):
         if exercise != exercise_name:
             continue
 
-        week_start = date.fromordinal(
-            date.toordinal() - date.weekday()
-        )
+        week_start = start_of_week(date)
 
         weekly_sets[week_start] = (
             weekly_sets.get(week_start, 0) + 1
@@ -1123,16 +924,7 @@ def main():
             continue
 
         if entry in ['w', 'week']:
-            today = datetime.now().date()
-            start_of_week = today.fromordinal(
-                today.toordinal() - today.weekday()
-            )
-
-            show_volume_for_range(
-                'Weekly volume',
-                start_of_week,
-                today
-            )
+            show_this_week_volume()
             continue
 
         if entry == 'today':
@@ -1140,31 +932,15 @@ def main():
             continue
 
         if entry == 'w-2':
-            today = datetime.now().date()
-            start_of_week = today.fromordinal(
-                today.toordinal() - today.weekday()
-            )
-
-            start_date = start_of_week.fromordinal(
-                start_of_week.toordinal() - 14
-            )
-            end_date = start_of_week.fromordinal(
-                start_of_week.toordinal() - 8
-            )
-
-            show_volume_for_range(
-                'Two weeks ago volume',
-                start_date,
-                end_date
-            )
+            show_two_weeks_ago_volume()
             continue
 
         if entry == 'avg4':
-            show_4_week_average()
+            show_average_sets(4)
             continue
 
         if entry == 'avg8':
-            show_8_week_average()
+            show_average_sets(8)
             continue
 
         if entry.strip().lower() == 'compare last':
