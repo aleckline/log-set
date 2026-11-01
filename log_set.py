@@ -63,6 +63,34 @@ def format_weight(weight):
 
     return weight
 
+def read_log_rows():
+    """Return every row of the workout log that has all six columns.
+
+    Values are left as raw strings; callers parse what they need.
+    """
+    with open(FILENAME) as file:
+        return [
+            row
+            for row in csv.reader(file)
+            if len(row) >= 6
+        ]
+
+def parse_date(text):
+    return datetime.strptime(text, '%Y-%m-%d').date()
+
+def parse_set_row(row):
+    """Return (date, exercise, weight, reps, note), or None if the row is bad."""
+    try:
+        return (
+            parse_date(row[0]),
+            row[2].strip(),
+            float(row[3]),
+            int(float(row[4])),
+            row[5].strip(),
+        )
+    except ValueError:
+        return None
+
 def print_report_header(title):
     print()
     print('=' * 40)
@@ -151,44 +179,10 @@ def print_categorized_volume(volume_sets, volume_total):
         printed_category = True
 
 def show_volume_for_range(label, start_date, end_date):
-    volume_sets = {}
-    volume_total = {}
-
-    with open(FILENAME) as file:
-        reader = csv.reader(file)
-
-        for row in reader:
-            if len(row) < 6:
-                continue
-
-            try:
-                date = datetime.strptime(
-                    row[0],
-                    '%Y-%m-%d'
-                ).date()
-
-                exercise = row[2].strip()
-                weight = float(row[3])
-                reps = int(float(row[4]))
-
-            except ValueError:
-                continue
-
-            if start_date <= date <= end_date:
-                volume = calculate_volume(
-                    exercise,
-                    weight,
-                    reps
-                )
-
-                volume_sets[exercise] = (
-                    volume_sets.get(exercise, 0) + 1
-                )
-
-                volume_total[exercise] = (
-                    volume_total.get(exercise, 0)
-                    + volume
-                )
+    volume_sets, volume_total = get_volume_for_range(
+        start_date,
+        end_date
+    )
 
     print_report_header(label.title())
 
@@ -208,55 +202,7 @@ def show_rolling_7_day_volume():
         today.toordinal() - 6
     )
 
-    rolling_sets = {}
-    rolling_volume = {}
-
-    with open(FILENAME) as file:
-        reader = csv.reader(file)
-
-        for row in reader:
-            if len(row) < 6:
-                continue
-
-            try:
-                date = datetime.strptime(
-                    row[0],
-                    '%Y-%m-%d'
-                ).date()
-
-                exercise = row[2].strip()
-                weight = float(row[3])
-                reps = int(float(row[4]))
-
-            except ValueError:
-                continue
-
-            if start_date <= date <= today:
-                volume = calculate_volume(
-                    exercise,
-                    weight,
-                    reps
-                )
-
-                rolling_sets[exercise] = (
-                    rolling_sets.get(exercise, 0) + 1
-                )
-
-                rolling_volume[exercise] = (
-                    rolling_volume.get(exercise, 0)
-                    + volume
-                )
-
-    print_report_header('7-Day Rolling Volume')
-
-    if not rolling_volume:
-        print('    No workouts logged.')
-        return
-
-    print_categorized_volume(
-        rolling_sets,
-        rolling_volume
-    )
+    show_volume_for_range('7-Day Rolling Volume', start_date, today)
 
 def print_reports():
     today = datetime.now().date()
@@ -270,17 +216,11 @@ def print_reports():
     #show_volume_for_range('Last week volume', start_of_last_week, end_of_last_week)
 
 def show_copy_mode(exercise_name):
-    entries = []
-
-    with open(FILENAME) as file:
-        reader = csv.reader(file)
-
-        for row in reader:
-            if len(row) < 6:
-                continue
-
-            if row[2] == exercise_name:
-                entries.append(row)
+    entries = [
+        row
+        for row in read_log_rows()
+        if row[2] == exercise_name
+    ]
 
     if not entries:
         print(f'No history found for {exercise_name}.')
@@ -299,34 +239,21 @@ def show_today_workout():
     entries = {}
     exercise_order = []
 
-    with open(FILENAME) as file:
-        reader = csv.reader(file)
+    for row in read_log_rows():
+        parsed = parse_set_row(row)
 
-        for row in reader:
-            if len(row) < 6:
-                continue
+        if parsed is None:
+            continue
 
-            try:
-                date = datetime.strptime(
-                    row[0],
-                    '%Y-%m-%d'
-                ).date()
+        date, exercise, weight, reps, note = parsed
 
-                exercise = row[2].strip()
-                weight = float(row[3])
-                reps = int(float(row[4]))
-                note = row[5].strip()
+        if date == today:
+            if exercise not in entries:
+                entries[exercise] = {}
+                exercise_order.append(exercise)
 
-            except ValueError:
-                continue
-
-            if date == today:
-                if exercise not in entries:
-                    entries[exercise] = {}
-                    exercise_order.append(exercise)
-
-                key = (weight, note)
-                entries[exercise].setdefault(key, []).append(reps)
+            key = (weight, note)
+            entries[exercise].setdefault(key, []).append(reps)
 
     print_report_header('Today')
 
@@ -372,28 +299,22 @@ def show_today_workout():
 def show_exercise_history(*exercise_names):
     history = {}
 
-    with open(FILENAME) as file:
-        reader = csv.reader(file)
+    for row in read_log_rows():
+        exercise = row[2]
 
-        for row in reader:
-            if len(row) < 6:
-                continue
+        if exercise not in exercise_names:
+            continue
 
-            exercise = row[2]
+        try:
+            date = row[0]
+            weight = float(row[3])
+            reps = int(float(row[4]))
+        except ValueError:
+            continue
 
-            if exercise not in exercise_names:
-                continue
+        key = (date, exercise, weight)
 
-            try:
-                date = row[0]
-                weight = float(row[3])
-                reps = int(float(row[4]))
-            except ValueError:
-                continue
-
-            key = (date, exercise, weight)
-
-            history.setdefault(key, []).append(reps)
+        history.setdefault(key, []).append(reps)
 
     if not history:
         print('No history found.')
@@ -439,30 +360,7 @@ def show_4_week_average():
         today.toordinal() - 27
     )
 
-    total_sets = {}
-
-    with open(FILENAME) as file:
-        reader = csv.reader(file)
-
-        for row in reader:
-            if len(row) < 6:
-                continue
-
-            try:
-                date = datetime.strptime(
-                    row[0],
-                    '%Y-%m-%d'
-                ).date()
-
-                exercise = row[2].strip()
-
-            except ValueError:
-                continue
-
-            if start_date <= date <= today:
-                total_sets[exercise] = (
-                    total_sets.get(exercise, 0) + 1
-                )
+    total_sets = count_sets_for_range(start_date, today)
 
     print_report_header('4-Week Average Sets')
 
@@ -536,33 +434,30 @@ def show_4_week_average():
 
         printed_category = True
 
+def count_sets_for_range(start_date, end_date):
+    """Count logged sets per exercise between two dates (inclusive)."""
+    total_sets = {}
+
+    for row in read_log_rows():
+        try:
+            date = parse_date(row[0])
+        except ValueError:
+            continue
+
+        if start_date <= date <= end_date:
+            exercise = row[2].strip()
+            total_sets[exercise] = total_sets.get(exercise, 0) + 1
+
+    return total_sets
+
 def get_4_week_set_totals():
     today = datetime.now().date()
     start_date = today.fromordinal(today.toordinal() - 27)
-    total_sets = {}
 
     try:
-        file = open(FILENAME)
+        return count_sets_for_range(start_date, today)
     except FileNotFoundError:
-        return total_sets
-
-    with file:
-        reader = csv.reader(file)
-
-        for row in reader:
-            if len(row) < 6:
-                continue
-
-            try:
-                date = datetime.strptime(row[0], '%Y-%m-%d').date()
-            except ValueError:
-                continue
-
-            if start_date <= date <= today:
-                exercise = row[2].strip()
-                total_sets[exercise] = total_sets.get(exercise, 0) + 1
-
-    return total_sets
+        return {}
 
 def select_workout_menu(category_name, exercise_categories):
     categories = {
@@ -616,30 +511,7 @@ def show_8_week_average():
         today.toordinal() - 55
     )
 
-    total_sets = {}
-
-    with open(FILENAME) as file:
-        reader = csv.reader(file)
-
-        for row in reader:
-            if len(row) < 6:
-                continue
-
-            try:
-                date = datetime.strptime(
-                    row[0],
-                    '%Y-%m-%d'
-                ).date()
-
-                exercise = row[2].strip()
-
-            except ValueError:
-                continue
-
-            if start_date <= date <= today:
-                total_sets[exercise] = (
-                    total_sets.get(exercise, 0) + 1
-                )
+    total_sets = count_sets_for_range(start_date, today)
 
     print_report_header('8-Week Average Sets')
 
@@ -717,41 +589,29 @@ def get_volume_for_range(start_date, end_date):
     volume_sets = {}
     volume_total = {}
 
-    with open(FILENAME) as file:
-        reader = csv.reader(file)
+    for row in read_log_rows():
+        parsed = parse_set_row(row)
 
-        for row in reader:
-            if len(row) < 6:
-                continue
+        if parsed is None:
+            continue
 
-            try:
-                date = datetime.strptime(
-                    row[0],
-                    '%Y-%m-%d'
-                ).date()
+        date, exercise, weight, reps, note = parsed
 
-                exercise = row[2].strip()
-                weight = float(row[3])
-                reps = int(float(row[4]))
+        if start_date <= date <= end_date:
+            volume = calculate_volume(
+                exercise,
+                weight,
+                reps
+            )
 
-            except ValueError:
-                continue
+            volume_sets[exercise] = (
+                volume_sets.get(exercise, 0) + 1
+            )
 
-            if start_date <= date <= end_date:
-                volume = calculate_volume(
-                    exercise,
-                    weight,
-                    reps
-                )
-
-                volume_sets[exercise] = (
-                    volume_sets.get(exercise, 0) + 1
-                )
-
-                volume_total[exercise] = (
-                    volume_total.get(exercise, 0)
-                    + volume
-                )
+            volume_total[exercise] = (
+                volume_total.get(exercise, 0)
+                + volume
+            )
 
     return volume_sets, volume_total
 
@@ -945,41 +805,30 @@ def show_weekly_exercise_history(exercise_name):
     weekly_sets = {}
     weekly_volume = {}
 
-    with open(FILENAME) as file:
-        reader = csv.reader(file)
+    for row in read_log_rows():
+        try:
+            date = parse_date(row[0])
+            exercise = row[2].strip()
+            weight = float(row[3])
+            reps = float(row[4])
+        except ValueError:
+            continue
 
-        for row in reader:
-            if len(row) < 6:
-                continue
+        if exercise != exercise_name:
+            continue
 
-            try:
-                date = datetime.strptime(
-                    row[0],
-                    '%Y-%m-%d'
-                ).date()
+        week_start = date.fromordinal(
+            date.toordinal() - date.weekday()
+        )
 
-                exercise = row[2].strip()
-                weight = float(row[3])
-                reps = float(row[4])
+        weekly_sets[week_start] = (
+            weekly_sets.get(week_start, 0) + 1
+        )
 
-            except ValueError:
-                continue
-
-            if exercise != exercise_name:
-                continue
-
-            week_start = date.fromordinal(
-                date.toordinal() - date.weekday()
-            )
-
-            weekly_sets[week_start] = (
-                weekly_sets.get(week_start, 0) + 1
-            )
-
-            weekly_volume[week_start] = (
-                weekly_volume.get(week_start, 0)
-                + weight * reps
-            )
+        weekly_volume[week_start] = (
+            weekly_volume.get(week_start, 0)
+            + weight * reps
+        )
 
     print_report_header(
         f'{exercise_name} Weekly History'
@@ -1103,23 +952,17 @@ def categorize_new_exercises(new_exercises, exercise_categories):
 def find_uncategorized_exercises(exercise_categories):
     uncategorized = []
 
-    with open(FILENAME) as file:
-        reader = csv.reader(file)
+    for row in read_log_rows():
+        exercise = row[2].strip()
 
-        for row in reader:
-            if len(row) < 6:
-                continue
+        if not exercise:
+            continue
 
-            exercise = row[2].strip()
-
-            if not exercise:
-                continue
-
-            if (
-                exercise not in exercise_categories
-                and exercise not in uncategorized
-            ):
-                uncategorized.append(exercise)
+        if (
+            exercise not in exercise_categories
+            and exercise not in uncategorized
+        ):
+            uncategorized.append(exercise)
 
     return uncategorized
 
